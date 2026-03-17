@@ -4,32 +4,30 @@
  */
 
 // States
-#define WELCOME         0
+#define WELCOME 0
 #define CATEGORY_SELECT 1
-#define PLAYING         2
-#define GUESS           3
-#define RESULT          4
+#define PLAYING 2
+#define GUESS 3
+#define RESULT 4
 
-// it holds these as global game variables
-int state;          // current state
-int category;       // 0=Food,1=Animal,2=Country,3=Movie
+int state; // current state
+int category; // 0 = Food, 1 = Animal, 2 = Country, 3 = Movie
 int questions_asked; // 0 to 20
-int last_answer;    // 0=YES, 1=NO
+int last_answer; // 0=YES, 1=NO
 
 void run_game(void) {
     state = WELCOME;
 
     while (1) {
-
-        // ── WELCOME ──────────────────────────────
-        if (state == WELCOME) {
-            vga_draw_welcome();       // calls vga_display.c
+        // ----------- WELCOME -----------
+        if(state == WELCOME) {
+            vga_draw_welcome(); // calls vga_display.c
             // wait for any KEY press to continue
             if (key_pressed())        // calls answer_input.c
                 state = CATEGORY_SELECT;
         }
 
-        // ── CATEGORY SELECT ──────────────────────
+        // ----------- CATEGORY SELECT -----------
         else if (state == CATEGORY_SELECT) {
             vga_draw_category();      // calls vga_display.c
             category = read_category(); // calls category_select.c

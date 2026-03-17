@@ -1,4 +1,8 @@
-/* game_controller.c - corrected version */
+// game_controller.c 
+
+#include "vga_display.h"
+#include "answer_input.h"
+#include "category_select.h"
 
 #define WELCOME 0
 #define CATEGORY_SELECT 1
@@ -14,11 +18,11 @@ int last_answer;
 
 void run_game(void) {
     state = WELCOME;
-    prev_state = -1; // -1 means "no previous state"
+    prev_state = -1; // to keep track of when we enter a new state to avoid repeating functions
 
     while (1) {
-
         // ---------- WELCOME ----------
+        //poll welcome till user presses a key, then moves to CATEGORY_SELECT state
         if (state == WELCOME) {
             if (prev_state != WELCOME) { // just entered this state
                 vga_draw_welcome(); // draw screen ONCE
@@ -29,46 +33,51 @@ void run_game(void) {
         }
 
         // ---------- CATEGORY SELECT ----------
+        //poll until user selects a valid category, then moves to PLAYING state
         else if (state == CATEGORY_SELECT) {
-            if (prev_state != CATEGORY_SELECT) {  // just entered
-                vga_draw_category();              // draw screen ONCE
+            if (prev_state != CATEGORY_SELECT) {  
+                vga_draw_category();
                 prev_state = CATEGORY_SELECT;
             }
-            category = read_category();
-            if (category != -1) {
-                hex_start_marquee(category);
-                hex_set_questions(20);
-                questions_asked = 0;
-                bayes_init(category);
+            category = read_category(); //returns 0, 1, 2, 3 for food animal country movie -1 invalid
+            if (category != -1) { //invalid switch input, keep polling
+                hex_display(category); //TO DO
+                bayes_thm(category); //TO DO, tells bayes which dataset/category to load
                 state = PLAYING;
             }
         }
 
-        // ── PLAYING ──────────────────────────────────────────
+        // ---------- PLAYING ----------
         else if (state == PLAYING) {
-            if (prev_state != PLAYING) {    // just entered PLAYING
-                vga_draw_background(category); // draw bg + box + YES/NO ONCE
+            if (prev_state != PLAYING) {    
+                vga_draw_background(category); 
+                hex_set_questions(20); //TO DO
                 prev_state = PLAYING;
+            
+                //swap question text each round
+                int questions_asked = 0;
+                int q = question(); //TO DO
+                vga_draw_question(q); // only redraws text
+                //audio_thinking(); //TO DO
             }
 
-            // now just swap the question text each round
-            int q = question_engine_next();
-            vga_draw_question(q);           // only redraws text
-            audio_play_thinking();
-
             last_answer = wait_for_answer();
+            if (last_answer == 0 || last_answer == 1) {
+                bayes_update(q, last_answer); //TO DO, update algorithm with new information
+                questions_asked++;
+                hex_set_questions(20 - questions_asked);
 
-            bayes_update(q, last_answer);
-            questions_asked++;
-            hex_set_questions(20 - questions_asked);
-
-            if (bayes_top_probability() > 0.90)
-                state = GUESS;
-            else if (questions_asked >= 20)
-                state = GUESS;
+            //check game conditions
+            if (bayes_probability() > 0.90) state = GUESS; //TO DO
+            else if (questions_asked >= 20) state = GUESS;
+            else { //still playing
+                int q = question();  
+                vga_draw_question(q);
+            }
         }
+    }
 
-        // ── GUESS ────────────────────────────────────────────
+        // ---------- GUESS ----------
         else if (state == GUESS) {
             if (prev_state != GUESS) {      // just entered GUESS
                 int guess = bayes_top_candidate();
@@ -94,14 +103,3 @@ void run_game(void) {
         }
     }
 }
-"""
-WELCOME entered --> vga_draw_welcome()        draws once
-CATEGORY entered --> vga_draw_category()       draws once
-PLAYING entered --> vga_draw_background()     draws once
-  question 1 --> vga_draw_question(q1)     swaps text only
-  question 2 --> vga_draw_question(q2)     swaps text only
-  ...
-GUESS entered --> vga_draw_guess()          draws once
-RESULT entered  --> vga_draw_result()         draws once
-WELCOME entered --> vga_draw_welcome()        draws once (restart)
-"""

@@ -1,78 +1,107 @@
-/* game_controller.c
- * top-level state machine, calls all other modules, decides which state
- * States: WELCOME, CATEGORY_SELECT, PLAYING, GUESS, RESULT
- */
+/* game_controller.c - corrected version */
 
-// States
-#define WELCOME 0
+#define WELCOME         0
 #define CATEGORY_SELECT 1
-#define PLAYING 2
-#define GUESS 3
-#define RESULT 4
+#define PLAYING         2
+#define GUESS           3
+#define RESULT          4
 
-int state; // current state
-int category; // 0 = Food, 1 = Animal, 2 = Country, 3 = Movie
-int questions_asked; // 0 to 20
-int last_answer; // 0=YES, 1=NO
+int state;
+int prev_state;        // ← track previous state
+int category;
+int questions_asked;
+int last_answer;
 
 void run_game(void) {
-    state = WELCOME;
+    state      = WELCOME;
+    prev_state = -1;       // -1 means "no previous state"
 
     while (1) {
-        // ----------- WELCOME -----------
-        if(state == WELCOME) {
-            vga_draw_welcome(); // calls vga_display.c
-            // wait for any KEY press to continue
-            if (key_pressed())        // calls answer_input.c
+
+        // ── WELCOME ──────────────────────────────────────────
+        if (state == WELCOME) {
+            if (prev_state != WELCOME) {    // just entered this state
+                vga_draw_welcome();         // draw screen ONCE
+                prev_state = WELCOME;
+            }
+            if (key_pressed())
                 state = CATEGORY_SELECT;
         }
 
-        // ----------- CATEGORY SELECT -----------
+        // ── CATEGORY SELECT ──────────────────────────────────
         else if (state == CATEGORY_SELECT) {
-            vga_draw_category();      // calls vga_display.c
-            category = read_category(); // calls category_select.c
+            if (prev_state != CATEGORY_SELECT) {  // just entered
+                vga_draw_category();              // draw screen ONCE
+                prev_state = CATEGORY_SELECT;
+            }
+            category = read_category();
             if (category != -1) {
-                hex_start_marquee(category); // calls hex_display.c
-                hex_set_questions(20);       // calls hex_display.c
+                hex_start_marquee(category);
+                hex_set_questions(20);
                 questions_asked = 0;
-                bayes_init(category);        // calls bayes_engine.c
+                bayes_init(category);
                 state = PLAYING;
             }
         }
 
-        // ── PLAYING ──────────────────────────────
+        // ── PLAYING ──────────────────────────────────────────
         else if (state == PLAYING) {
-            int q = question_engine_next(); // calls question_engine.c
-            vga_draw_question(q);           // calls vga_display.c
-            audio_play_thinking();          // calls audio_output.c
+            if (prev_state != PLAYING) {    // just entered PLAYING
+                vga_draw_background(category); // draw bg + box + YES/NO ONCE
+                prev_state = PLAYING;
+            }
 
-            last_answer = wait_for_answer();// calls answer_input.c
-                                            // blocks until KEY0 or KEY1
+            // now just swap the question text each round
+            int q = question_engine_next();
+            vga_draw_question(q);           // only redraws text
+            audio_play_thinking();
 
-            bayes_update(q, last_answer);   // calls bayes_engine.c
+            last_answer = wait_for_answer();
+
+            bayes_update(q, last_answer);
             questions_asked++;
-            hex_set_questions(20 - questions_asked); // calls hex_display.c
+            hex_set_questions(20 - questions_asked);
 
-            // check win conditions
             if (bayes_top_probability() > 0.90)
                 state = GUESS;
             else if (questions_asked >= 20)
                 state = GUESS;
         }
 
-        // ── GUESS ────────────────────────────────
+        // ── GUESS ────────────────────────────────────────────
         else if (state == GUESS) {
-            int guess = bayes_top_candidate(); // calls bayes_engine.c
-            vga_draw_guess(guess);             // calls vga_display.c
-            audio_play_guess();                // calls audio_output.c
-            state = RESULT;
+            if (prev_state != GUESS) {      // just entered GUESS
+                int guess = bayes_top_candidate();
+                vga_draw_guess(guess);      // draw screen ONCE
+                audio_play_guess();
+                prev_state = GUESS;
+            }
+            // just wait here until user acknowledges
+            if (key_pressed())
+                state = RESULT;
         }
 
-        // ── RESULT ───────────────────────────────
+        // ── RESULT ───────────────────────────────────────────
         else if (state == RESULT) {
-            // wait for KEY press, then restart
-            if (key_pressed())                 // calls answer_input.c
+            if (prev_state != RESULT) {     // just entered RESULT
+                vga_draw_result(           
+                    bayes_top_probability() > 0.90  // did akinator win?
+                );
+                prev_state = RESULT;
+            }
+            if (key_pressed())
                 state = WELCOME;
         }
     }
 }
+"""
+WELCOME entered --> vga_draw_welcome()        draws once
+CATEGORY entered --> vga_draw_category()       draws once
+PLAYING entered --> vga_draw_background()     draws once
+  question 1 --> vga_draw_question(q1)     swaps text only
+  question 2 --> vga_draw_question(q2)     swaps text only
+  ...
+GUESS entered --> vga_draw_guess()          draws once
+RESULT entered  --> vga_draw_result()         draws once
+WELCOME entered --> vga_draw_welcome()        draws once (restart)
+"""

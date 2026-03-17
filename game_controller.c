@@ -1,34 +1,34 @@
 /* game_controller.c - corrected version */
 
-#define WELCOME         0
+#define WELCOME 0
 #define CATEGORY_SELECT 1
-#define PLAYING         2
-#define GUESS           3
-#define RESULT          4
+#define PLAYING 2
+#define GUESS 3
+#define RESULT 4
 
 int state;
-int prev_state;        // ← track previous state
+int prev_state; 
 int category;
 int questions_asked;
 int last_answer;
 
 void run_game(void) {
-    state      = WELCOME;
-    prev_state = -1;       // -1 means "no previous state"
+    state = WELCOME;
+    prev_state = -1; // -1 means "no previous state"
 
     while (1) {
 
-        // ── WELCOME ──────────────────────────────────────────
+        // ---------- WELCOME ----------
         if (state == WELCOME) {
-            if (prev_state != WELCOME) {    // just entered this state
-                vga_draw_welcome();         // draw screen ONCE
+            if (prev_state != WELCOME) { // just entered this state
+                vga_draw_welcome(); // draw screen ONCE
                 prev_state = WELCOME;
             }
             if (key_pressed())
                 state = CATEGORY_SELECT;
         }
 
-        // ── CATEGORY SELECT ──────────────────────────────────
+        // ---------- CATEGORY SELECT ----------
         else if (state == CATEGORY_SELECT) {
             if (prev_state != CATEGORY_SELECT) {  // just entered
                 vga_draw_category();              // draw screen ONCE

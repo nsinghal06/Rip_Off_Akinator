@@ -2,6 +2,9 @@
 
 #define KEY_BASE 0xFF200050
 
+//leds for states
+//
+
 //Any key pressed, used in welcome, called by game_controller.c
 int key_pressed(void) {
     volatile int *key_ptr = (int *) KEY_BASE;

@@ -100,43 +100,13 @@ static void draw_string(int x, int y, const char *s, short colour) {
 }
 
 void vga_draw_welcome(void) {
-    draw_rect(0, 0, SCREEN_W, SCREEN_H, DARK_BLUE);
+    draw_rect(0, 0, SCREEN_W, SCREEN_H, DARK_BLUE); //full screen
     draw_rect(60, 70, 200, 40, CYAN);
     draw_string(76, 83, "AKINATOR 2.0", DARK_BLUE);
     draw_string(44, 130, "THE MIND READER", WHITE);
     draw_string(52, 190, "PRESS ANY KEY", YELLOW);
 }
 
-void vga_draw_category(void) {
-    draw_rect(0, 0, SCREEN_W, SCREEN_H, WHITE);
-    draw_rect(0, 0, SCREEN_W, 30, DARK_BLUE);
-    draw_string(68, 10, "PICK A CATEGORY", WHITE);
-    draw_string(88, 60,  "FOOD    : SW0", DARK_BLUE);
-    draw_string(88, 90,  "ANIMAL  : SW1", DARK_BLUE);
-    draw_string(88, 120, "COUNTRY : SW2", DARK_BLUE);
-    draw_string(88, 150, "MOVIE   : SW3", DARK_BLUE);
-    draw_string(52, 210, "FLIP SWITCH TO SELECT", GREY);
-}
-
-void vga_draw_playing(int category) {
-    short bg;
-    const char *cat;
-    if      (category == 0) { bg = ORANGE; cat = "FOOD";    }
-    else if (category == 1) { bg = GREEN;  cat = "ANIMAL";  }
-    else if (category == 2) { bg = BLUE;   cat = "COUNTRY"; }
-    else                    { bg = PURPLE; cat = "MOVIE";   }
-
-    draw_rect(0, 0, SCREEN_W, SCREEN_H, bg);
-    draw_rect(0, 0, SCREEN_W, 22, DARK_BLUE);
-    draw_string(4, 7, cat, WHITE);
-    draw_rect(10, 50, 300, 100, DARK_BLUE);
-    draw_string(20, 65, "QUESTION 1:", WHITE);
-    draw_string(20, 90, "IS IT A DESSERT?", YELLOW);
-    draw_rect(10,  180, 130, 35, GREEN);
-    draw_rect(180, 180, 130, 35, RED);
-    draw_string(28,  191, "KEY0 = YES", DARK_BLUE);
-    draw_string(196, 191, "KEY1 = NO",  WHITE);
-}
 
 void vga_draw_done(void) {
     draw_rect(0, 0, SCREEN_W, SCREEN_H, BLACK);

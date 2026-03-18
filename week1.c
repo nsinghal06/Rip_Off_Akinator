@@ -172,8 +172,7 @@ int main(void) {
     int state = WELCOME;
     int category = -1;
     int q_count = 20; //question counter
-    int led_bit = 0; //alternates between LED0 and LED1 each question
-
+    int led_bit = 0; //which led
     blank_hex();
     set_leds(0);
 
@@ -216,7 +215,7 @@ int main(void) {
             show_number(q_count);
             delay_seconds(1);
 
-            led_bit = 0;        // start with LED0
+            led_bit = 0; // start with LED0
             state = QUESTIONS;
         }
 
@@ -228,7 +227,12 @@ int main(void) {
                 while (1);
             }
 
-            int led_mask = (1 << led_bit); //LED0 or LED1
+            int led_mask; //actual pattern to write
+			if (led_bit == 0) { //on LED0
+				led_mask = 1;  //0001
+			} else { //on LED1
+				led_mask = 2;  //0010
+			}
             volatile int *key_ptr = (int *) KEY_BASE;
             *(key_ptr + 3) = 0xF; //clear edgeCap
 

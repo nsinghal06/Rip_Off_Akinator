@@ -43,7 +43,7 @@ Switch encoding
 #define COUNTDOWN 2
 #define QUESTIONS 3
 
-// ─── delay ───────────────────────────────────────────────────────────────────
+// ---------- delay ----------
 // Busy-wait ~1 second (calibrate DELAY_1S for your board's clock if needed)
 #define DELAY_1S 2500000
 
@@ -53,7 +53,7 @@ void delay_seconds(int seconds) {
         for (i = 0; i < DELAY_1S; i++);
 }
 
-// ─── HEX display ─────────────────────────────────────────────────────────────
+// ---------- HEX display ----------
 void write_hex(unsigned int h5, unsigned int h4, unsigned int h3,
                unsigned int h2, unsigned int h1, unsigned int h0) {
     volatile int *hex_low  = (volatile int *) HEX_BASE;
@@ -98,7 +98,7 @@ void show_number(int n) {
               seg[ones]);
 }
 
-// ─── LEDs ─────────────────────────────────────────────────────────────────────
+// ---------- LEDs ----------
 void set_leds(unsigned int mask) {
     volatile int *led_ptr = (volatile int *) LED_BASE;
     *led_ptr = mask;
@@ -131,7 +131,7 @@ int wait_for_answer(void) {
     }
 }
 
-// ─── Category select ──────────────────────────────────────────────────────────
+// ---------- category select ----------
 int get_category_index(void) {
     volatile int *sw_ptr = (volatile int *) SW_BASE;
     int sw;
@@ -144,7 +144,7 @@ int get_category_index(void) {
     }
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// ---------- main ----------
 int main(void) {
     int state    = WELCOME;
     int category = -1;
@@ -156,14 +156,12 @@ int main(void) {
 
     while (1) {
 
-        // ── WELCOME ──────────────────────────────────────────────────────────
         if (state == WELCOME) {
             wait_for_keypress();
             show_start();
             state = CATEGORY;
         }
 
-        // ── CATEGORY ─────────────────────────────────────────────────────────
         else if (state == CATEGORY) {
             category = get_category_index();
             show_category(category);
@@ -171,7 +169,7 @@ int main(void) {
             state = COUNTDOWN;
         }
 
-        // ── COUNTDOWN: 3 → 2 → 1 ────────────────────────────────────────────
+        //----------countdown 3 2 1 ----------
         else if (state == COUNTDOWN) {
             // Show 3
             write_hex(SEG_OFF, SEG_OFF, SEG_OFF, SEG_OFF, SEG_OFF, SEG_3);
@@ -192,7 +190,7 @@ int main(void) {
             state = QUESTIONS;
         }
 
-        // ── QUESTIONS ────────────────────────────────────────────────────────
+        // ---------- QUESTIONS ----------
         else if (state == QUESTIONS) {
 
             if (q_count == 0) {
@@ -202,8 +200,7 @@ int main(void) {
                 while (1);      // halt
             }
 
-            // Flash the current LED until user presses KEY0 or KEY1
-            // Uses edgecap so a held key doesn't re-trigger
+    
             unsigned int led_mask = (1 << led_bit); // LED0 or LED1
             volatile int *key_ptr = (volatile int *) KEY_BASE;
             *(key_ptr + 3) = 0xF; // clear edgecap before flashing loop

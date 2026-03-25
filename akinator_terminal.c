@@ -381,7 +381,7 @@ int main(void) {
             }
             print_top5();
 
-            if (bayes_top_probability() > 0.75f) {
+            if (bayes_top_probability() > 0.70f) {
                 printf("  >> Confidence > 75%% reached!\n\n");
                 break;
             }

@@ -1,635 +1,788 @@
 # generate_dataset.py
-# run command: python3 generate_dataset.py
-# Output: dataset.c and dataset.h 
+# Run: python3 generate_dataset.py
+# Output: dataset.c
 
-# 289 FOODS - ALPHABETICALLY SORTED
-foods = sorted([
-    # DESSERTS & SWEETS
-    "Apple Pie", "Baklava", "Biscotti", "Biscuit", "Black Forest Cake",
-    "Bread Pudding", "Brownie", "Butter Tart", "Cannoli", "Caramel",
-    "Carrot Cake", "Cheesecake", "Churro Ice Cream", "Churros",
-    "Cinnamon Roll", "Cookie", "Cotton Candy", "Crepes", "Creme Brulee",
-    "Croissant Sweet", "Cupcake", "Custard", "Danish Pastry",
-    "Donuts", "Eclair", "Frozen Yogurt", "Fudge", "Fruit Cake",
-    "Funnel Cake", "Gelato", "Gingerbread", "Ice Cream", "Key Lime Pie",
-    "Lemon Tart", "Macarons", "Marshmallow", "Meringue", "Mochi",
-    "Muffin", "Nanaimo Bar", "Pain au Chocolat", "Pancakes",
-    "Peach Cobbler", "Pecan Pie", "Popsicle", "Pudding",
-    "Pumpkin Pie", "Red Velvet Cake", "Rice Pudding", "Scone",
-    "Shortbread", "Sorbet", "Sponge Cake", "Sticky Toffee Pudding",
-    "Strawberry Shortcake", "Strudel", "Tiramisu", "Tart",
-    "Toffee", "Trifle", "Turkish Delight", "Wafer", "Waffle Cone",
-    "Waffles", "Chocolate Fondue", "Chocolate Mousse",
+NUM_FOODS     = 190
+NUM_QUESTIONS = 104
+NUM_POOLS     = 8
 
-    # ITALIAN
-    "Lasagna", "Pasta", "Pizza",
+# ── Question index constants ──────────────────────────────
+# Phase 1
+DESSERT=0; FRUIT=1; VEG=2; ASIAN=3; SNACK=4; SOUP=5; MEAT=6; WESTERN=7
 
-    # JAPANESE
-    "Ramen", "Sushi",
+# Dessert pool [8-19]
+D_FROZEN=8; D_BAKED=9; D_CHOC=10; D_CHEESE=11; D_CAKE=12; D_FRIED=13
+D_CANDY=14; D_FRUIT=15; D_CREAMY=16; D_STICK=17; D_CRUNCHY=18; D_FRENCH=19
 
-    # CHINESE
-    "Dim Sum", "Dumplings", "Fried Rice", "Spring Rolls",
+# Fruit pool [20-31]
+F_CITRUS=20; F_BERRY=21; F_TROP=22; F_YELOR=23; F_RED=24; F_GREEN=25
+F_LARGE=26; F_PIT=27; F_SWEET=28; F_PEEL=29; F_VINE=30; F_MELON=31
 
-    # SOUTHEAST ASIAN
-    "Mango Sticky Rice", "Pad Thai",
+# Veg pool [32-43]
+V_GROUND=32; V_GREEN=33; V_REDOR=34; V_WHITE=35; V_RAW=36; V_LEAFY=37
+V_ONION=38; V_STARCH=39; V_SQUASH=40; V_LEGUME=41; V_SMELL=42; V_PURPLE=43
 
-    # INDIAN
-    "Butter Chicken", "Samosa",
+# Asian pool [44-55]
+A_JAP=44; A_CHI=45; A_IND=46; A_NOOD=47; A_RICE=48; A_WRAP=49
+A_SOUP=50; A_SPICY=51; A_COLD=52; A_FRIED=53; A_FERM=54; A_SWEET=55
 
-    # KOREAN
-    "Kimchi",
+# Snack pool [56-67]
+S_SWEET=56; S_SALTY=57; S_CHOC=58; S_NUT=59; S_CHIP=60; S_GUMMY=61
+S_COOKIE=62; S_CHOCBAR=63; S_BAG=64; S_CRUNCHY=65; S_ASIAN=66; S_CRACKER=67
 
-    # AMERICAN
-    "BBQ Ribs", "Buffalo Wings", "Burger", "Chili", "Corn Dog",
-    "Corn on the Cob", "Fries", "Fried Chicken", "Grilled Cheese",
-    "Hot Dog", "Mac and Cheese", "Mashed Potatoes", "Meatloaf",
-    "Smoked Salmon",
+# Soup pool [68-79]
+SO_NOOD=68; SO_RICE=69; SO_BROTH=70; SO_CREAM=71; SO_TOM=72; SO_MEAT=73
+SO_SPICY=74; SO_ASIAN=75; SO_CHEESE=76; SO_COLD=77; SO_CHUNKY=78; SO_VEG=79
 
-    # MEXICAN
-    "Burrito", "Guacamole", "Nachos", "Quesadilla", "Salsa", "Tacos",
+# Meat pool [80-91]
+M_SEAFOOD=80; M_POULTRY=81; M_BEEF=82; M_FRIED=83; M_BREAD=84; M_GRILL=85
+M_WRAP=86; M_STICK=87; M_SAUCE=88; M_ASIAN=89; M_WEST=90; M_RAW=91
 
-    # MIDDLE EASTERN
-    "Hummus", "Kebab", "Shawarma",
+# Western pool [92-103]
+W_AMER=92; W_MEX=93; W_EUR=94; W_FRIED=95; W_BREAD=96; W_CHEESE=97
+W_SOUP=98; W_BFAST=99; W_SEAFOOD=100; W_COLD=101; W_SALAD=102; W_PASTA=103
 
-    # EUROPEAN
-    "Baguette", "Croissant", "Fish and Chips", "French Onion Soup",
-    "Pierogi", "Pretzel", "Quiche", "Ratatouille",
+# ── Helper ────────────────────────────────────────────────
+def make_props(d):
+    row = [0.05] * NUM_QUESTIONS
+    for k, v in d.items():
+        row[k] = float(v)
+    return row
 
-    # BREAKFAST
-    "Acai Bowl", "Avocado Toast", "Bagel", "Breakfast Burrito",
-    "Breakfast Sandwich", "Chia Pudding", "Eggs Benedict",
-    "French Toast", "Granola", "Hash Browns", "Oatmeal",
-    "Omelette", "Overnight Oats", "Scrambled Eggs", "Smoothie Bowl",
-    "Yogurt Parfait",
 
-    # SOUPS
-    "Chicken Noodle Soup", "Lentil Soup", "Miso Soup", "Tomato Soup",
-
-    # SEAFOOD
-    "Calamari", "Clams", "Crab", "Fish Tacos", "Grilled Octopus",
-    "Grilled Salmon", "Lobster", "Oysters", "Sashimi",
-    "Scallops", "Shrimp Cocktail",
-
-    # SNACKS & CANDY
-    "Almonds", "Animal Crackers", "Beef Jerky", "Cashews",
-    "Cheese Puffs", "Cheez Its", "Chips Ahoy", "Crackers",
-    "Doritos", "Ferrero Rocher", "Fruit Roll Up", "Goldfish Crackers",
-    "Graham Crackers", "Granola Bar", "Gummy Bears", "Hershey Bar",
-    "Kit Kat", "Lindt Chocolate", "M&Ms", "Milky Way", "Mixed Nuts",
-    "Nutter Butter", "Oreos", "Peanuts", "Pistachios", "Pocky",
-    "Popcorn", "Popcorn Chicken", "Popcorn Shrimp", "Pork Rinds",
-    "Potato Chips", "Prawn Crackers", "Pringles", "Pumpkin Seeds",
-    "Reese's Pieces", "Rice Cakes", "Rice Krispie Treat", "Ritz Crackers",
-    "Seaweed Snack", "Skittles", "Snickers", "Sour Patch Kids",
-    "Sunflower Seeds", "Toblerone", "Trail Mix", "Twix",
-
-    # FRUITS
-    "Acai", "Apple", "Apricot", "Avocado", "Banana", "Blackberry",
-    "Blueberry", "Cantaloupe", "Cherry", "Clementine", "Coconut",
-    "Cranberry", "Date", "Dragon Fruit", "Durian", "Fig",
-    "Gooseberry", "Grape", "Grapefruit", "Guava", "Honeydew",
-    "Jackfruit", "Kiwi", "Kumquat", "Lemon", "Lime", "Lychee",
-    "Mandarin", "Mango", "Mulberry", "Nectarine", "Olive",
-    "Orange", "Papaya", "Passion Fruit", "Peach", "Pear",
-    "Persimmon", "Pineapple", "Plantain", "Plum", "Pomegranate",
-    "Rambutan", "Raspberry", "Starfruit", "Strawberry", "Tamarind",
-    "Tangerine", "Tomato", "Watermelon",
-
-    # VEGETABLES
-    "Acorn Squash", "Arugula", "Artichoke", "Asparagus",
-    "Bamboo Shoots", "Bean Sprouts", "Beet", "Bell Pepper",
-    "Bok Choy", "Broccoli", "Brussels Sprouts", "Butternut Squash",
-    "Cabbage", "Carrot", "Cauliflower", "Celery", "Collard Greens",
-    "Corn", "Cucumber", "Eggplant", "Endive", "Fennel",
-    "Garlic", "Green Beans", "Kale", "Leek", "Lettuce",
-    "Mushroom", "Mustard Greens", "Okra", "Onion",
-    "Parsnip", "Peas", "Potato", "Pumpkin", "Radish",
-    "Radicchio", "Shallot", "Snow Peas", "Spinach", "Squash",
-    "Sugar Snap Peas", "Sweet Potato", "Swiss Chard", "Turnip",
-    "Watercress", "Yam", "Zucchini",
-])
-
-# 20 QUESTIONS
-questions = [
-    "Is it a dessert?", # Q00
-    "Is it served hot?", # Q01
-    "Does it contain meat?", # Q02
-    "Is it a fruit?", # Q03
-    "Is it a vegetable?", # Q04
-    "Is it naturally sweet?", # Q05
-    "Does it grow on a tree or vine?", # Q06
-    "Does it grow underground?", # Q07
-    "Is it green in colour?", # Q08
-    "Is it red or orange in colour?", # Q09
-    "Is it white or yellow in colour?", # Q10
-    "Can you eat it with your hands?", # Q11
-    "Is it fried or deep fried?", # Q12
-    "Does it contain bread or dough?", # Q13
-    "Does it contain cheese?", # Q14
-    "Is it from Asian cuisine?", # Q15
-    "Is it from European or Western cuisine?", # Q16
-    "Is it a liquid or soup?", # Q17
-    "Is it a snack or candy?", # Q18
-    "Is it typically eaten for breakfast?", # Q19
+# ── Food list ─────────────────────────────────────────────
+foods = [
+    "Acai Bowl", "Almonds", "Apple", "Apple Pie", "Apricot",
+    "Artichoke", "Asparagus", "Avocado", "Avocado Toast", "BBQ Ribs",
+    "Bagel", "Baguette", "Banana", "Bell Pepper",
+    "Biscuit", "Blackberry", "Blueberry", "Broccoli",
+    "Brownie", "Brussels Sprouts", "Buffalo Wings", "Burger", "Burrito",
+    "Butter Chicken", "Cabbage", "Calamari", "Cantaloupe",
+    "Carrot", "Carrot Cake", "Cashews", "Cauliflower", "Celery",
+    "Cheetos", "Cheesecake", "Cherry", "Chia Pudding", "Chicken Noodle Soup",
+    "Chili", "Chips Ahoy", "Chocolate Bar", "Churros", "Cinnamon Roll",
+    "Coconut", "Cookie", "Corn", "Corn Dog", "Cotton Candy",
+    "Crab", "Crackers", "Cranberry", "Creme Brulee", "Crepes",
+    "Croissant", "Cucumber", "Cupcake", "Custard",
+    "Date", "Dim Sum", "Donuts", "Doritos",
+    "Dragon Fruit", "Dumplings", "Ferrero Rocher",
+    "Fish and Chips", "French Onion Soup", "French Toast", "Fried Chicken", "Fried Rice",
+    "Fries", "Frozen Yogurt", "Fruit Roll Up", "Fudge",
+    "Funnel Cake", "Garlic", "Gelato", "Goldfish Crackers",
+    "Granola", "Granola Bar", "Grape", "Grapefruit",
+    "Grilled Cheese", "Guacamole", "Guava", "Gummy Bears", "Hash Browns",
+    "Chocolate", "Honeydew", "Hot Dog", "Hummus", "Ice Cream",
+    "Kebab", "Kimchi", "Kit Kat", "Kiwi", "Lasagna",
+    "Lemon", "Lemon Tart", "Lettuce", "Lime", "Lobster",
+    "Lychee", "M&Ms", "Mac and Cheese", "Macarons", "Mandarin",
+    "Mango", "Mango Sticky Rice", "Marshmallow", "Mashed Potatoes", "Meringue",
+    "Miso Soup", "Mochi", "Muffin", "Mushroom", "Nachos",
+    "Oatmeal", "Olive", "Omelette", "Onion", "Orange",
+    "Oreos", "Oysters", "Pad Thai", "Pain au Chocolat", "Pancakes",
+    "Papaya", "Passion Fruit", "Pasta", "Peach", "Peach Cobbler",
+    "Peanuts", "Pear", "Peas", "Pecan Pie", "Pierogi",
+    "Pineapple", "Pistachios", "Pizza", "Plum",
+    "Pomegranate", "Popcorn", "Popcorn Chicken", "Popsicle", "Potato",
+    "Potato Chips", "Pretzel", "Pringles", "Pudding", "Pumpkin",
+    "Pumpkin Pie", "Quesadilla", "Radish", "Ramen", "Raspberry",
+    "Ratatouille", "Red Velvet Cake", "Reese's Pieces", "Rice Krispie Treat", "Salsa",
+    "Salty Crackers", "Samosa", "Scone", "Scrambled Eggs", "Seaweed Snack",
+    "Shawarma", "Shrimp", "Skittles", "Smoothie Bowl",
+    "Sorbet", "Spinach", "Spring Rolls", "Squash",
+    "Strawberry", "Sushi", "Sweet Potato", "Tacos", "Tamarind",
+    "Tangerine", "Tart", "Tiramisu", "Toffee", "Tomato",
+    "Tomato Soup", "Trail Mix", "Turkish Delight",
+    "Wafer", "Waffles", "Watermelon",
+    "Yogurt Parfait", "Zucchini"
 ]
 
-# CATEGORY TAGS PER FOOD
-# each food gets a set of tags, tags are used to assign weights to questions
-food_tags = {
-    # DESSERTS
-    "Apple Pie":            ["dessert", "baked", "sweet", "dough", "fruit_based"],
-    "Baklava":              ["dessert", "baked", "sweet", "dough", "middle_eastern", "nutty"],
-    "Biscuit":              ["dessert", "baked", "sweet", "handheld", "dough"],
-    "Black Forest Cake":    ["dessert", "baked", "sweet", "chocolate"],
-    "Bread Pudding":        ["dessert", "baked", "sweet", "dough"],
-    "Brownie":              ["dessert", "baked", "sweet", "chocolate", "handheld"],
-    "Butter Tart":          ["dessert", "baked", "sweet", "dough"],
-    "Cannoli":              ["dessert", "fried", "sweet", "italian", "dough"],
-    "Caramel":              ["dessert", "sweet", "candy", "snack"],
-    "Carrot Cake":          ["dessert", "baked", "sweet"],
-    "Cheesecake":           ["dessert", "baked", "sweet", "cheese", "cold"],
-    "Churros":              ["dessert", "fried", "sweet", "handheld", "dough"],
-    "Cinnamon Roll":        ["dessert", "baked", "sweet", "dough"],
-    "Cookie":               ["dessert", "baked", "sweet", "handheld"],
-    "Cotton Candy":         ["dessert", "sweet", "candy", "handheld", "snack"],
-    "Crepes":               ["dessert", "sweet", "pan_cooked", "dough", "french"],
-    "Creme Brulee":         ["dessert", "sweet", "cold", "french", "creamy"],
-    "Croissant Sweet":      ["dessert", "baked", "sweet", "dough", "french", "handheld"],
-    "Cupcake":              ["dessert", "baked", "sweet"],
-    "Custard":              ["dessert", "sweet", "creamy", "cold"],
-    "Danish Pastry":        ["dessert", "baked", "sweet", "dough", "handheld"],
-    "Donuts":               ["dessert", "fried", "sweet", "dough", "handheld"],
-    "Eclair":               ["dessert", "baked", "sweet", "dough", "french"],
-    "Frozen Yogurt":        ["dessert", "sweet", "frozen", "cold", "dairy"],
-    "Fudge":                ["dessert", "sweet", "candy", "chocolate", "handheld"],
-    "Fruit Cake":           ["dessert", "baked", "sweet", "fruit_based"],
-    "Funnel Cake":          ["dessert", "fried", "sweet", "dough", "handheld"],
-    "Gelato":               ["dessert", "sweet", "frozen", "cold", "italian", "dairy"],
-    "Gingerbread":          ["dessert", "baked", "sweet", "handheld"],
-    "Ice Cream":            ["dessert", "sweet", "frozen", "cold", "dairy"],
-    "Key Lime Pie":         ["dessert", "baked", "sweet", "cold"],
-    "Lemon Tart":           ["dessert", "baked", "sweet", "french"],
-    "Macarons":             ["dessert", "baked", "sweet", "french", "handheld"],
-    "Marshmallow":          ["dessert", "sweet", "candy", "soft", "handheld", "snack"],
-    "Meringue":             ["dessert", "baked", "sweet"],
-    "Mochi":                ["dessert", "sweet", "asian", "handheld", "chewy"],
-    "Muffin":               ["dessert", "baked", "sweet", "handheld"],
-    "Nanaimo Bar":          ["dessert", "sweet", "chocolate", "cold", "handheld"],
-    "Pain au Chocolat":     ["dessert", "baked", "sweet", "dough", "chocolate", "french", "handheld"],
-    "Pancakes":             ["dessert", "sweet", "pan_cooked", "dough", "breakfast"],
-    "Peach Cobbler":        ["dessert", "baked", "sweet", "fruit_based"],
-    "Pecan Pie":            ["dessert", "baked", "sweet", "nutty"],
-    "Popsicle":             ["dessert", "sweet", "frozen", "cold", "handheld"],
-    "Pudding":              ["dessert", "sweet", "creamy", "cold"],
-    "Pumpkin Pie":          ["dessert", "baked", "sweet"],
-    "Red Velvet Cake":      ["dessert", "baked", "sweet", "chocolate"],
-    "Rice Pudding":         ["dessert", "sweet", "creamy", "cold"],
-    "Scone":                ["dessert", "baked", "sweet", "handheld", "dough", "british"],
-    "Shortbread":           ["dessert", "baked", "sweet", "handheld", "british"],
-    "Sorbet":               ["dessert", "sweet", "frozen", "cold"],
-    "Sponge Cake":          ["dessert", "baked", "sweet"],
-    "Sticky Toffee Pudding":["dessert", "baked", "sweet", "british", "hot"],
-    "Strawberry Shortcake": ["dessert", "baked", "sweet", "fruit_based"],
-    "Tiramisu":             ["dessert", "sweet", "cold", "italian", "creamy", "layered"],
-    "Tart":                 ["dessert", "baked", "sweet", "dough"],
-    "Toffee":               ["dessert", "sweet", "candy", "handheld", "snack"],
-    "Turkish Delight":      ["dessert", "sweet", "candy", "middle_eastern", "chewy", "handheld"],
-    "Wafer":                ["dessert", "baked", "sweet", "handheld", "snack"],
-    "Waffle Cone":          ["dessert", "baked", "sweet", "handheld", "dough"],
-    "Waffles":              ["dessert", "sweet", "pan_cooked", "dough", "breakfast"],
-    "Chocolate Cake":       ["dessert", "sweet", "cold", "chocolate", "creamy", "layered"],
-
-    # ITALIAN
-    "Lasagna":              ["italian", "hot", "baked", "meat", "cheese", "dough"],
-    "Pasta":                ["italian", "hot", "european"],
-    "Pizza":                ["italian", "hot", "baked", "cheese", "dough", "handheld"],
-
-    # JAPANESE
-    "Ramen":                ["asian", "japanese", "hot", "soup", "meat"],
-    "Sushi":                ["asian", "japanese", "cold", "seafood", "handheld"],
-
-    # CHINESE
-    "Dim Sum":              ["asian", "chinese", "hot", "meat", "handheld", "dough"],
-    "Dumplings":            ["asian", "chinese", "hot", "meat", "dough", "handheld"],
-    "Fried Rice":           ["asian", "chinese", "hot", "fried", "meat"],
-    "Spring Rolls":         ["asian", "chinese", "fried", "handheld", "dough"],
-
-    # SOUTHEAST ASIAN
-    "Mango Sticky Rice":    ["asian", "sweet", "cold", "fruit_based"],
-    "Pad Thai":             ["asian", "hot", "fried", "seafood", "noodles"],
-
-    # INDIAN
-    "Butter Chicken":       ["asian", "indian", "hot", "meat", "spicy"],
-    "Samosa":               ["asian", "indian", "fried", "handheld", "dough", "spicy"],
-
-    # KOREAN
-    "Kimchi":               ["asian", "korean", "cold", "spicy", "vegetable_dish"],
-
-    # AMERICAN
-    "BBQ Ribs":             ["american", "hot", "meat", "western"],
-    "Buffalo Wings":        ["american", "hot", "fried", "meat", "handheld", "spicy", "western"],
-    "Burger":               ["american", "hot", "meat", "handheld", "dough", "western"],
-    "Chili":                ["american", "hot", "meat", "soup", "spicy", "western"],
-    "Corn Dog":             ["american", "hot", "fried", "meat", "handheld", "dough", "western"],
-    "Corn on the Cob":      ["american", "hot", "vegetable_dish", "handheld", "western"],
-    "Fries":                ["american", "hot", "fried", "handheld", "western", "snack"],
-    "Fried Chicken":        ["american", "hot", "fried", "meat", "handheld", "western"],
-    "Grilled Cheese":       ["american", "hot", "cheese", "handheld", "dough", "western"],
-    "Hot Dog":              ["american", "hot", "meat", "handheld", "dough", "western"],
-    "Mac and Cheese":       ["american", "hot", "cheese", "western"],
-    "Mashed Potatoes":      ["american", "hot", "western", "vegetable_dish"],
-
-    # MEXICAN
-    "Burrito":              ["mexican", "hot", "meat", "handheld", "dough", "western", "spicy"],
-    "Guacamole":            ["mexican", "cold", "western", "handheld", "vegetarian"],
-    "Nachos":               ["mexican", "hot", "cheese", "handheld", "western", "snack"],
-    "Quesadilla":           ["mexican", "hot", "cheese", "handheld", "dough", "western"],
-    "Salsa":                ["mexican", "cold", "western", "spicy", "liquid"],
-    "Tacos":                ["mexican", "hot", "meat", "handheld", "dough", "western", "spicy"],
-
-    # MIDDLE EASTERN
-    "Hummus":               ["middle_eastern", "cold", "vegetarian"],
-    "Kebab":                ["middle_eastern", "hot", "meat", "handheld"],
-    "Shawarma":             ["middle_eastern", "hot", "meat", "handheld", "dough"],
-
-    # EUROPEAN
-    "Baguette":             ["french", "baked", "handheld", "dough", "european"],
-    "Croissant":            ["french", "baked", "handheld", "dough", "european"],
-    "Fish and Chips":       ["british", "hot", "fried", "seafood", "handheld", "european"],
-    "French Onion Soup":    ["french", "hot", "soup", "cheese", "european"],
-    "Pierogi":              ["polish", "hot", "dough", "cheese", "european"],
-    "Pretzel":              ["german", "baked", "handheld", "dough", "european"],
-    "Quiche":               ["french", "baked", "cheese", "european"],
-    "Ratatouille":          ["french", "hot", "vegetarian", "european"],
-
-    # BREAKFAST
-    "Acai Bowl":            ["breakfast", "cold", "sweet", "fruit_based"],
-    "Avocado Toast":        ["breakfast", "handheld", "dough", "vegetarian"],
-    "Bagel":                ["breakfast", "baked", "handheld", "dough"],
-    "Boiled eggs":          ["breakfast", "hot", "pan_cooked", "western"],
-    "Breakfast Burrito":    ["breakfast", "hot", "meat", "handheld", "dough", "western"],
-    "Breakfast Sandwich":   ["breakfast", "hot", "meat", "handheld", "dough", "western"],
-    "Chia Pudding":         ["breakfast", "cold", "sweet", "creamy"],
-    "French Toast":         ["breakfast", "hot", "sweet", "dough", "pan_cooked"],
-    "Granola":              ["breakfast", "sweet", "snack", "handheld"],
-    "Hash Browns":          ["breakfast", "hot", "fried", "western"],
-    "Oatmeal":              ["breakfast", "hot", "sweet"],
-    "Omelette":             ["breakfast", "hot", "pan_cooked", "meat", "cheese", "western"],
-    "Overnight Oats":       ["breakfast", "cold", "sweet"],
-    "Scrambled Eggs":       ["breakfast", "hot", "pan_cooked", "western"],
-    "Smoothie Bowl":        ["breakfast", "cold", "sweet", "fruit_based"],
-    "Yogurt Parfait":       ["breakfast", "cold", "sweet", "dairy"],
-
-    # SOUPS
-    "Chicken Noodle Soup":  ["hot", "soup", "meat", "western"],
-    "Lentil Soup":          ["hot", "soup", "vegetarian"],
-    "Miso Soup":            ["asian", "japanese", "hot", "soup"],
-    "Tomato Soup":          ["hot", "soup", "vegetarian", "western"],
-
-    # SEAFOOD
-    "Calamari":             ["seafood", "hot", "fried", "handheld"],
-    "Clams":                ["seafood", "hot"],
-    "Crab":                 ["seafood", "hot"],
-    "Fish Tacos":           ["seafood", "hot", "handheld", "dough", "western"],
-    "Grilled Octopus":      ["seafood", "hot"],
-    "Grilled Salmon":       ["seafood", "hot"],
-    "Lobster":              ["seafood", "hot", "red"],
-    "Oysters":              ["seafood", "cold"],
-    "Sashimi":              ["seafood", "cold", "asian", "japanese"],
-    "Scallops":             ["seafood", "hot"],
-    "Shrimp":             ["seafood", "cold", "handheld"],
-
-    # SNACKS & CANDY
-    "Almonds":              ["snack", "handheld", "nutty"],
-    "Animal Crackers":      ["snack", "sweet", "handheld", "baked"],
-    "Beef Jerky":           ["snack", "meat", "handheld", "western"],
-    "Cashews":              ["snack", "handheld", "nutty"],
-    "Cheese Puffs":         ["snack", "handheld", "cheese", "western"],
-    "Cheez Its":            ["snack", "baked", "handheld", "cheese", "western"],
-    "Chips Ahoy":           ["snack", "sweet", "handheld", "baked", "chocolate"],
-    "Crackers":             ["snack", "baked", "handheld", "dough"],
-    "Doritos":              ["snack", "handheld", "western", "spicy"],
-    "Ferrero Rocher":       ["snack", "sweet", "handheld", "chocolate", "candy", "nutty"],
-    "Fruit Roll Up":        ["snack", "sweet", "handheld", "candy", "fruit_based"],
-    "Goldfish Crackers":    ["snack", "baked", "handheld", "cheese", "western"],
-    "Graham Crackers":      ["snack", "baked", "handheld", "sweet", "dough"],
-    "Granola Bar":          ["snack", "sweet", "handheld", "baked"],
-    "Gummy Bears":          ["snack", "sweet", "handheld", "candy", "chewy"],
-    "Hershey Bar":          ["snack", "sweet", "handheld", "chocolate", "candy"],
-    "Kit Kat":              ["snack", "sweet", "handheld", "chocolate", "candy"],
-    "Lindt Truffle":        ["snack", "sweet", "handheld", "chocolate", "candy"],
-    "M&Ms":                 ["snack", "sweet", "handheld", "chocolate", "candy"],
-    "Milky Way":            ["snack", "sweet", "handheld", "chocolate", "candy"],
-    "Mixed Nuts":           ["snack", "handheld", "nutty"],
-    "Nutter Butter":        ["snack", "sweet", "handheld", "baked"],
-    "Oreos":                ["snack", "sweet", "handheld", "baked", "chocolate"],
-    "Peanuts":              ["snack", "handheld", "nutty"],
-    "Pistachios":           ["snack", "handheld", "nutty"],
-    "Pocky":                ["snack", "sweet", "handheld", "asian", "chocolate"],
-    "Popcorn":              ["snack", "handheld", "western"],
-    "Popcorn Chicken":      ["snack", "hot", "fried", "meat", "handheld", "western"],
-    "Popcorn Shrimp":       ["snack", "hot", "fried", "seafood", "handheld"],
-    "Pork Rinds":           ["snack", "handheld", "meat", "fried", "western"],
-    "Potato Chips":         ["snack", "handheld", "western", "fried"],
-    "Prawn Crackers":       ["snack", "handheld", "asian", "seafood", "fried"],
-    "Pringles":             ["snack", "handheld", "western"],
-    "Pumpkin Seeds":        ["snack", "handheld"],
-    "Reese's Pieces":       ["snack", "sweet", "handheld", "candy"],
-    "Rice Cakes":           ["snack", "handheld"],
-    "Rice Krispie Treat":   ["snack", "sweet", "handheld"],
-    "Ritz Crackers":        ["snack", "baked", "handheld", "dough"],
-    "Seaweed Snack":        ["snack", "handheld", "asian"],
-    "Skittles":             ["snack", "sweet", "handheld", "candy"],
-    "Snickers":             ["snack", "sweet", "handheld", "chocolate", "candy", "nutty"],
-    "Sour Patch Kids":      ["snack", "sweet", "handheld", "candy"],
-    "Sunflower Seeds":      ["snack", "handheld"],
-    "Toblerone":            ["snack", "sweet", "handheld", "chocolate", "candy", "nutty"],
-    "Trail Mix":            ["snack", "handheld", "nutty"],
-    "Twix":                 ["snack", "sweet", "handheld", "chocolate", "candy"],
-
-    # FRUITS
-    "Apple":                ["fruit", "sweet", "tree_fruit", "handheld"],
-    "Apricot":              ["fruit", "sweet", "tree_fruit", "handheld"],
-    "Avocado":              ["fruit", "tree_fruit", "handheld"],
-    "Banana":               ["fruit", "sweet", "tropical", "handheld"],
-    "Blackberry":           ["fruit", "sweet", "berry", "handheld"],
-    "Blueberry":            ["fruit", "sweet", "berry", "handheld"],
-    "Cantaloupe":           ["fruit", "sweet", "melon"],
-    "Cherry":               ["fruit", "sweet", "tree_fruit", "handheld"],
-    "Clementine":           ["fruit", "sweet", "citrus", "handheld"],
-    "Coconut":              ["fruit", "tropical"],
-    "Cranberry":            ["fruit", "berry", "sour"],
-    "Date":                 ["fruit", "sweet", "tropical", "handheld"],
-    "Dragon Fruit":         ["fruit", "sweet", "tropical", "handheld"],
-    "Fig":                  ["fruit", "sweet", "tree_fruit", "handheld"],
-    "Gooseberry":           ["fruit", "berry", "sour"],
-    "Grape":                ["fruit", "sweet", "vine_fruit", "handheld"],
-    "Grapefruit":           ["fruit", "citrus", "sour", "handheld"],
-    "Guava":                ["fruit", "sweet", "tropical", "handheld"],
-    "Honeydew":             ["fruit", "sweet", "melon"],
-    "Jackfruit":            ["fruit", "sweet", "tropical"],
-    "Kiwi":                 ["fruit", "sweet", "handheld"],
-    "Kumquat":              ["fruit", "citrus", "sour", "handheld"],
-    "Lemon":                ["fruit", "citrus", "sour", "handheld"],
-    "Lime":                 ["fruit", "citrus", "sour", "handheld"],
-    "Lychee":               ["fruit", "sweet", "tropical", "handheld"],
-    "Mandarin":             ["fruit", "sweet", "citrus", "handheld"],
-    "Mango":                ["fruit", "sweet", "tropical", "handheld"],
-    "Mulberry":             ["fruit", "sweet", "berry"],
-    "Nectarine":            ["fruit", "sweet", "tree_fruit", "handheld"],
-    "Olive":                ["fruit", "sour", "handheld"],
-    "Orange":               ["fruit", "sweet", "citrus", "handheld"],
-    "Papaya":               ["fruit", "sweet", "tropical", "handheld"],
-    "Passion Fruit":        ["fruit", "sweet", "tropical"],
-    "Peach":                ["fruit", "sweet", "tree_fruit", "handheld"],
-    "Pear":                 ["fruit", "sweet", "tree_fruit", "handheld"],
-    "Persimmon":            ["fruit", "sweet", "tree_fruit", "handheld"],
-    "Pineapple":            ["fruit", "sweet", "tropical"],
-    "Plantain":             ["fruit", "tropical"],
-    "Plum":                 ["fruit", "sweet", "tree_fruit", "handheld"],
-    "Pomegranate":          ["fruit", "sweet", "handheld"],
-    "Raspberry":            ["fruit", "sweet", "berry", "handheld"],
-    "Starfruit":            ["fruit", "sweet", "tropical", "handheld"],
-    "Strawberry":           ["fruit", "sweet", "berry", "handheld"],
-    "Tamarind":             ["fruit", "sour", "tropical"],
-    "Tangerine":            ["fruit", "sweet", "citrus", "handheld"],
-    "Tomato":               ["fruit", "vegetable_dish", "sour"],
-    "Watermelon":           ["fruit", "sweet", "melon"],
-
-    # VEGETABLES
-    "Arugula":              ["vegetable", "green", "raw"],
-    "Artichoke":            ["vegetable", "hot"],
-    "Asparagus":            ["vegetable", "hot", "green"],
-    "Bean Sprouts":         ["vegetable", "asian", "raw"],
-    "Beet":                 ["vegetable", "underground", "red_orange"],
-    "Bell Pepper":          ["vegetable", "raw", "red_orange"],
-    "Bok Choy":             ["vegetable", "asian", "green"],
-    "Broccoli":             ["vegetable", "hot", "green"],
-    "Brussels Sprouts":     ["vegetable", "hot", "green"],
-    "Butternut Squash":     ["vegetable", "hot", "baked", "red_orange"],
-    "Cabbage":              ["vegetable", "green", "raw"],
-    "Carrot":               ["vegetable", "underground", "red_orange", "raw"],
-    "Cauliflower":          ["vegetable", "hot", "white_yellow"],
-    "Celery":               ["vegetable", "green", "raw"],
-    "Corn":                 ["vegetable", "hot", "white_yellow", "handheld"],
-    "Cucumber":             ["vegetable", "green", "raw"],
-    "Eggplant":             ["vegetable", "hot", "purple"],
-    "Garlic":               ["vegetable", "underground", "white_yellow"],
-    "Green Beans":          ["vegetable", "hot", "green"],
-    "Kale":                 ["vegetable", "hot", "green"],
-    "Leek":                 ["vegetable", "hot", "white_yellow", "underground"],
-    "Lettuce":              ["vegetable", "green", "raw"],
-    "Mushroom":             ["vegetable", "hot"],
-    "Mustard Greens":       ["vegetable", "hot", "green"],
-    "Okra":                 ["vegetable", "hot", "green"],
-    "Onion":                ["vegetable", "underground", "white_yellow"],
-    "Peas":                 ["vegetable", "hot", "green"],
-    "Potato":               ["vegetable", "hot", "underground", "white_yellow"],
-    "Pumpkin":              ["vegetable", "hot", "baked", "red_orange"],
-    "Radish":               ["vegetable", "underground", "red_orange", "raw"],
-    "Shallot":              ["vegetable", "underground", "white_yellow"],
-    "Snow Peas":            ["vegetable", "green", "raw"],
-    "Spinach":              ["vegetable", "green", "raw"],
-    "Squash":               ["vegetable", "hot", "white_yellow"],
-    "Sugar Snap Peas":      ["vegetable", "green", "raw", "handheld"],
-    "Sweet Potato":         ["vegetable", "hot", "underground", "red_orange"],
-    "Turnip":               ["vegetable", "underground", "white_yellow"],
-    "Yam":                  ["vegetable", "hot", "underground"],
-    "Zucchini":             ["vegetable", "hot", "green"],
+# ── Properties ────────────────────────────────────────────
+props = {
+    "Acai Bowl":          make_props({DESSERT:0.6, D_FRUIT:0.9, D_CREAMY:0.6,
+                                      W_BFAST:0.95, W_COLD:0.8}),
+    "Almonds":            make_props({SNACK:0.95,
+                                      S_SALTY:0.6, S_NUT:0.95, S_CRUNCHY:0.9, S_BAG:0.8}),
+    "Apple":              make_props({FRUIT:0.95,
+                                      F_RED:0.6, F_GREEN:0.5, F_LARGE:0.5,
+                                      F_PIT:0.3, F_SWEET:0.85}),
+    "Apple Pie":          make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_BAKED:0.95, D_FRUIT:0.95, D_CRUNCHY:0.7,
+                                      W_AMER:0.9}),
+    "Apricot":            make_props({FRUIT:0.95,
+                                      F_YELOR:0.9, F_PIT:0.95, F_SWEET:0.8}),
+    "Artichoke":          make_props({VEG:0.95,
+                                      V_GREEN:0.7}),
+    "Asparagus":          make_props({VEG:0.95,
+                                      V_GREEN:0.95}),
+    "Avocado":            make_props({FRUIT:0.95,
+                                      F_TROP:0.7, F_GREEN:0.95, F_LARGE:0.5,
+                                      F_PIT:0.95, F_PEEL:0.8}),
+    "Avocado Toast":      make_props({WESTERN:0.9,
+                                      W_AMER:0.7, W_BFAST:0.95, W_BREAD:0.95}),
+    "BBQ Ribs":           make_props({MEAT:0.95, WESTERN:0.95,
+                                      M_BEEF:0.9, M_GRILL:0.95, M_SAUCE:0.95, M_WEST:0.95,
+                                      W_AMER:0.95}),
+    "Bagel":              make_props({WESTERN:0.8,
+                                      W_AMER:0.8, W_BFAST:0.9, W_BREAD:0.95}),
+    "Baguette":           make_props({WESTERN:0.95,
+                                      W_EUR:0.95, W_BREAD:0.95}),
+    "Banana":             make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_YELOR:0.95, F_LARGE:0.4,
+                                      F_PEEL:0.95, F_SWEET:0.95}),
+    "Bell Pepper":        make_props({VEG:0.95,
+                                      V_REDOR:0.6, V_GREEN:0.5, V_RAW:0.8}),
+    "Biscuit":            make_props({DESSERT:0.6, WESTERN:0.8,
+                                      D_BAKED:0.9, D_CRUNCHY:0.7,
+                                      W_EUR:0.8}),
+    "Blackberry":         make_props({FRUIT:0.95,
+                                      F_BERRY:0.95, F_RED:0.8, F_SWEET:0.7}),
+    "Blueberry":          make_props({FRUIT:0.95,
+                                      F_BERRY:0.95, F_SWEET:0.85}),
+    "Broccoli":           make_props({VEG:0.95,
+                                      V_GREEN:0.95}),
+    "Brownie":            make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_BAKED:0.95, D_CHOC:0.95,
+                                      W_AMER:0.8}),
+    "Brussels Sprouts":   make_props({VEG:0.95,
+                                      V_GREEN:0.95, V_SMELL:0.6}),
+    "Buffalo Wings":      make_props({MEAT:0.95, WESTERN:0.95,
+                                      M_POULTRY:0.95, M_FRIED:0.9, M_SAUCE:0.9, M_WEST:0.95,
+                                      W_AMER:0.95}),
+    "Burger":             make_props({MEAT:0.95, WESTERN:0.95,
+                                      M_BEEF:0.9, M_BREAD:0.95, M_WEST:0.95,
+                                      W_AMER:0.95, W_BREAD:0.95, W_CHEESE:0.6}),
+    "Burrito":            make_props({MEAT:0.7, WESTERN:0.95,
+                                      M_BREAD:0.9, M_WRAP:0.9, M_WEST:0.9,
+                                      W_MEX:0.95, W_BREAD:0.9}),
+    "Butter Chicken":     make_props({MEAT:0.95, ASIAN:0.95,
+                                      M_POULTRY:0.95, M_SAUCE:0.95, M_ASIAN:0.95,
+                                      A_IND:0.95, A_SPICY:0.7}),
+    "Cabbage":            make_props({VEG:0.95,
+                                      V_GREEN:0.6, V_RAW:0.6, V_SMELL:0.4}),
+    "Calamari":           make_props({MEAT:0.95, WESTERN:0.6,
+                                      M_SEAFOOD:0.95, M_FRIED:0.9, M_WEST:0.6,
+                                      W_EUR:0.6, W_SEAFOOD:0.95}),
+    "Cantaloupe":         make_props({FRUIT:0.95,
+                                      F_YELOR:0.8, F_LARGE:0.95,
+                                      F_SWEET:0.95, F_PEEL:0.95, F_MELON:0.95}),
+    "Carrot":             make_props({VEG:0.95,
+                                      V_GROUND:0.95, V_REDOR:0.9, V_RAW:0.9}),
+    "Carrot Cake":        make_props({DESSERT:0.95, WESTERN:0.8,
+                                      D_BAKED:0.95, D_CAKE:0.95, D_CHEESE:0.7,
+                                      W_AMER:0.7}),
+    "Cashews":            make_props({SNACK:0.95,
+                                      S_SALTY:0.6, S_NUT:0.95, S_CRUNCHY:0.8, S_BAG:0.8}),
+    "Cauliflower":        make_props({VEG:0.95,
+                                      V_WHITE:0.95, V_RAW:0.6}),
+    "Celery":             make_props({VEG:0.95,
+                                      V_GREEN:0.9, V_RAW:0.95}),
+    "Cheetos":            make_props({SNACK:0.95,
+                                      S_SALTY:0.9, S_CHIP:0.7, S_CRUNCHY:0.95, S_BAG:0.9}),
+    "Cheesecake":         make_props({DESSERT:0.95, WESTERN:0.7,
+                                      D_BAKED:0.8, D_CHEESE:0.95, D_CREAMY:0.9,
+                                      W_AMER:0.6, W_EUR:0.5}),
+    "Cherry":             make_props({FRUIT:0.95,
+                                      F_RED:0.95, F_PIT:0.95, F_SWEET:0.85}),
+    "Chia Pudding":       make_props({DESSERT:0.5,
+                                      D_CREAMY:0.8,
+                                      W_BFAST:0.8, W_COLD:0.9}),
+    "Chicken Noodle Soup":make_props({SOUP:0.95, MEAT:0.9, WESTERN:0.9,
+                                      SO_NOOD:0.95, SO_BROTH:0.9, SO_MEAT:0.95,
+                                      M_POULTRY:0.95,
+                                      W_AMER:0.8, W_SOUP:0.95}),
+    "Chili":              make_props({SOUP:0.8, MEAT:0.8, WESTERN:0.95,
+                                      SO_MEAT:0.9, SO_CHUNKY:0.95, SO_SPICY:0.8,
+                                      M_BEEF:0.8, M_SAUCE:0.7, M_WEST:0.95,
+                                      W_AMER:0.95, W_SOUP:0.8}),
+    "Chips Ahoy":         make_props({SNACK:0.95, DESSERT:0.4,
+                                      S_SWEET:0.9, S_CHOC:0.7, S_COOKIE:0.95,
+                                      S_CRUNCHY:0.9, S_BAG:0.9}),
+    "Chocolate Bar":      make_props({SNACK:0.95, DESSERT:0.6,
+                                      S_SWEET:0.95, S_CHOC:0.95, S_CHOCBAR:0.95}),
+    "Churros":            make_props({DESSERT:0.95,
+                                      D_FRIED:0.95, D_CRUNCHY:0.8,
+                                      W_MEX:0.8}),
+    "Cinnamon Roll":      make_props({DESSERT:0.95, WESTERN:0.8,
+                                      D_BAKED:0.95, D_CREAMY:0.5,
+                                      W_AMER:0.7, W_BFAST:0.6}),
+    "Coconut":            make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_LARGE:0.7,
+                                      F_PEEL:0.95, F_SWEET:0.6}),
+    "Cookie":             make_props({DESSERT:0.9, SNACK:0.6,
+                                      D_BAKED:0.95, D_CRUNCHY:0.7,
+                                      S_SWEET:0.9, S_COOKIE:0.95}),
+    "Corn":               make_props({VEG:0.95,
+                                      V_STARCH:0.9, V_REDOR:0.3}),
+    "Corn Dog":           make_props({MEAT:0.9, WESTERN:0.95,
+                                      M_POULTRY:0.3, M_BEEF:0.6, M_FRIED:0.95,
+                                      M_BREAD:0.9, M_STICK:0.95, M_WEST:0.95,
+                                      W_AMER:0.95, W_BREAD:0.9}),
+    "Cotton Candy":       make_props({DESSERT:0.95,
+                                      D_CANDY:0.95,
+                                      S_SWEET:0.95}),
+    "Crab":               make_props({MEAT:0.95,
+                                      M_SEAFOOD:0.95, M_WEST:0.5,
+                                      W_SEAFOOD:0.95}),
+    "Crackers":           make_props({SNACK:0.95,
+                                      S_SALTY:0.7, S_CRACKER:0.95,
+                                      S_CRUNCHY:0.9, S_BAG:0.7}),
+    "Cranberry":          make_props({FRUIT:0.95,
+                                      F_BERRY:0.95, F_RED:0.9, F_SWEET:0.1}),
+    "Creme Brulee":       make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_CREAMY:0.9, D_CRUNCHY:0.5, D_FRENCH:0.95,
+                                      W_EUR:0.9}),
+    "Crepes":             make_props({DESSERT:0.7, WESTERN:0.9,
+                                      D_FRUIT:0.4, D_FRENCH:0.95,
+                                      W_EUR:0.9}),
+    "Croissant":          make_props({WESTERN:0.95,
+                                      D_BAKED:0.9, D_CRUNCHY:0.7, D_FRENCH:0.95,
+                                      W_EUR:0.95, W_BREAD:0.9, W_BFAST:0.7}),
+    "Cucumber":           make_props({VEG:0.95,
+                                      V_GREEN:0.95, V_RAW:0.95}),
+    "Cupcake":            make_props({DESSERT:0.95, WESTERN:0.8,
+                                      D_BAKED:0.95, D_CAKE:0.9, D_CREAMY:0.6,
+                                      W_AMER:0.7}),
+    "Custard":            make_props({DESSERT:0.95, WESTERN:0.7,
+                                      D_CREAMY:0.95,
+                                      W_EUR:0.8}),
+    "Date":               make_props({FRUIT:0.95,
+                                      F_TROP:0.7, F_PIT:0.95, F_SWEET:0.99,
+                                      F_YELOR:0.5}),
+    "Dim Sum":            make_props({ASIAN:0.95, MEAT:0.6,
+                                      A_CHI:0.95, A_WRAP:0.9,
+                                      M_WRAP:0.9, M_ASIAN:0.95}),
+    "Donuts":             make_props({DESSERT:0.95, WESTERN:0.7,
+                                      D_FRIED:0.95, D_CANDY:0.4,
+                                      W_AMER:0.8}),
+    "Doritos":            make_props({SNACK:0.95,
+                                      S_SALTY:0.95, S_CHIP:0.95,
+                                      S_CRUNCHY:0.95, S_BAG:0.95}),
+    "Dragon Fruit":       make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_RED:0.7, F_LARGE:0.5,
+                                      F_SWEET:0.7, F_PEEL:0.9}),
+    "Dumplings":          make_props({ASIAN:0.95, MEAT:0.7,
+                                      A_CHI:0.8, A_WRAP:0.95,
+                                      M_WRAP:0.95, M_ASIAN:0.9}),
+    "Ferrero Rocher":     make_props({SNACK:0.95, DESSERT:0.6,
+                                      S_SWEET:0.95, S_CHOC:0.95,
+                                      S_CHOCBAR:0.7, S_NUT:0.6, S_CRUNCHY:0.7}),
+    "Fish and Chips":     make_props({MEAT:0.95, WESTERN:0.95,
+                                      M_SEAFOOD:0.95, M_FRIED:0.95, M_WEST:0.95,
+                                      W_EUR:0.95, W_SEAFOOD:0.95}),
+    "French Onion Soup":  make_props({SOUP:0.95, WESTERN:0.95,
+                                      SO_BROTH:0.7, SO_CHEESE:0.95, SO_VEG:0.5,
+                                      W_EUR:0.95, W_SOUP:0.95}),
+    "French Toast":       make_props({DESSERT:0.5, WESTERN:0.9,
+                                      D_BAKED:0.5,
+                                      W_EUR:0.5, W_AMER:0.6,
+                                      W_BREAD:0.95, W_BFAST:0.95}),
+    "Fried Chicken":      make_props({MEAT:0.95, WESTERN:0.95,
+                                      M_POULTRY:0.95, M_FRIED:0.95, M_WEST:0.95,
+                                      W_AMER:0.95}),
+    "Fried Rice":         make_props({ASIAN:0.95, MEAT:0.5,
+                                      A_CHI:0.9, A_RICE:0.95, A_FRIED:0.9,
+                                      M_ASIAN:0.9}),
+    "Fries":              make_props({WESTERN:0.95, SNACK:0.5,
+                                      W_AMER:0.9, W_FRIED:0.95,
+                                      S_SALTY:0.9, S_CRUNCHY:0.8}),
+    "Frozen Yogurt":      make_props({DESSERT:0.95,
+                                      D_FROZEN:0.95, D_CREAMY:0.8}),
+    "Fruit Roll Up":      make_props({SNACK:0.95, DESSERT:0.4,
+                                      S_SWEET:0.9, S_GUMMY:0.6, S_BAG:0.9}),
+    "Fudge":              make_props({DESSERT:0.95, SNACK:0.5,
+                                      D_CANDY:0.9, D_CHOC:0.7,
+                                      S_SWEET:0.95, S_CHOC:0.6}),
+    "Funnel Cake":        make_props({DESSERT:0.95, WESTERN:0.7,
+                                      D_FRIED:0.95, D_CRUNCHY:0.7,
+                                      W_AMER:0.9}),
+    "Garlic":             make_props({VEG:0.95,
+                                      V_GROUND:0.95, V_WHITE:0.7,
+                                      V_ONION:0.95, V_SMELL:0.99}),
+    "Gelato":             make_props({DESSERT:0.95, WESTERN:0.8,
+                                      D_FROZEN:0.95, D_CREAMY:0.95, D_FRENCH:0.8,
+                                      W_EUR:0.9}),
+    "Goldfish Crackers":  make_props({SNACK:0.95,
+                                      S_SALTY:0.8, S_CRACKER:0.9,
+                                      S_CRUNCHY:0.95, S_BAG:0.9}),
+    "Granola":            make_props({SNACK:0.5, DESSERT:0.3,
+                                      S_SWEET:0.5, S_CRUNCHY:0.9, S_NUT:0.4,
+                                      W_BFAST:0.7}),
+    "Granola Bar":        make_props({SNACK:0.95,
+                                      S_SWEET:0.6, S_CRUNCHY:0.6, S_NUT:0.4}),
+    "Grape":              make_props({FRUIT:0.95,
+                                      F_VINE:0.95, F_SWEET:0.9,
+                                      F_RED:0.4, F_GREEN:0.4}),
+    "Grapefruit":         make_props({FRUIT:0.95,
+                                      F_CITRUS:0.95, F_YELOR:0.7, F_LARGE:0.7,
+                                      F_PEEL:0.95, F_SWEET:0.2}),
+    "Grilled Cheese":     make_props({WESTERN:0.95,
+                                      W_AMER:0.9, W_BREAD:0.95, W_CHEESE:0.95}),
+    "Guacamole":          make_props({WESTERN:0.9,
+                                      W_MEX:0.95, W_SALAD:0.8, W_COLD:0.9}),
+    "Guava":              make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_GREEN:0.5,
+                                      F_SWEET:0.8, F_PEEL:0.5}),
+    "Gummy Bears":        make_props({SNACK:0.95, DESSERT:0.4,
+                                      S_SWEET:0.95, S_GUMMY:0.95, S_BAG:0.9}),
+    "Hash Browns":        make_props({WESTERN:0.9,
+                                      W_AMER:0.9, W_FRIED:0.9, W_BFAST:0.95}),
+    "Chocolate":          make_props({SNACK:0.95, DESSERT:0.6,
+                                      D_CANDY:0.8, D_CHOC:0.95,
+                                      S_SWEET:0.95, S_CHOC:0.95, S_CHOCBAR:0.9}),
+    "Honeydew":           make_props({FRUIT:0.95,
+                                      F_GREEN:0.8, F_LARGE:0.95,
+                                      F_SWEET:0.9, F_PEEL:0.95, F_MELON:0.95}),
+    "Hot Dog":            make_props({MEAT:0.95, WESTERN:0.95,
+                                      M_BEEF:0.7, M_BREAD:0.95, M_WEST:0.95,
+                                      W_AMER:0.95, W_BREAD:0.95}),
+    "Hummus":             make_props({WESTERN:0.4,
+                                      W_SALAD:0.9, W_COLD:0.9}),
+    "Ice Cream":          make_props({DESSERT:0.95,
+                                      D_FROZEN:0.95, D_CREAMY:0.9, D_STICK:0.4}),
+    "Kebab":              make_props({MEAT:0.95,
+                                      M_BEEF:0.6, M_GRILL:0.8,
+                                      M_STICK:0.9, M_SAUCE:0.6,
+                                      M_WRAP:0.5, M_WEST:0.4}),
+    "Kimchi":             make_props({ASIAN:0.95,
+                                      A_FERM:0.95, A_SPICY:0.9, A_COLD:0.8}),
+    "Kit Kat":            make_props({SNACK:0.95, DESSERT:0.5,
+                                      S_SWEET:0.95, S_CHOC:0.95,
+                                      S_CHOCBAR:0.95, S_CRUNCHY:0.8}),
+    "Kiwi":               make_props({FRUIT:0.95,
+                                      F_GREEN:0.9, F_PEEL:0.9, F_SWEET:0.8}),
+    "Lasagna":            make_props({MEAT:0.6, WESTERN:0.95,
+                                      M_BEEF:0.6, M_WEST:0.95,
+                                      W_EUR:0.95, W_CHEESE:0.8, W_PASTA:0.95}),
+    "Lemon":              make_props({FRUIT:0.95,
+                                      F_CITRUS:0.95, F_YELOR:0.95,
+                                      F_PEEL:0.95, F_SWEET:0.05}),
+    "Lemon Tart":         make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_BAKED:0.9, D_FRUIT:0.8,
+                                      D_CRUNCHY:0.6, D_CREAMY:0.5, D_FRENCH:0.9,
+                                      W_EUR:0.9}),
+    "Lettuce":            make_props({VEG:0.95,
+                                      V_GREEN:0.95, V_LEAFY:0.95, V_RAW:0.95}),
+    "Lime":               make_props({FRUIT:0.95,
+                                      F_CITRUS:0.95, F_GREEN:0.95,
+                                      F_PEEL:0.95, F_SWEET:0.05}),
+    "Lobster":            make_props({MEAT:0.95,
+                                      M_SEAFOOD:0.95, M_WEST:0.6,
+                                      W_SEAFOOD:0.95}),
+    "Lychee":             make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_RED:0.5,
+                                      F_PIT:0.9, F_PEEL:0.95, F_SWEET:0.95}),
+    "M&Ms":               make_props({SNACK:0.95, DESSERT:0.4,
+                                      S_SWEET:0.95, S_CHOC:0.95, S_BAG:0.9}),
+    "Mac and Cheese":     make_props({WESTERN:0.95,
+                                      W_AMER:0.95, W_CHEESE:0.95, W_PASTA:0.95}),
+    "Macarons":           make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_BAKED:0.95, D_CRUNCHY:0.6,
+                                      D_CREAMY:0.6, D_FRENCH:0.95,
+                                      W_EUR:0.9}),
+    "Mandarin":           make_props({FRUIT:0.95,
+                                      F_CITRUS:0.95, F_YELOR:0.8,
+                                      F_PEEL:0.95, F_SWEET:0.9}),
+    "Mango":              make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_YELOR:0.7, F_LARGE:0.6,
+                                      F_PIT:0.95, F_SWEET:0.95, F_PEEL:0.9}),
+    "Mango Sticky Rice":  make_props({DESSERT:0.7, ASIAN:0.95,
+                                      D_FRUIT:0.9,
+                                      A_SWEET:0.95, A_RICE:0.95}),
+    "Marshmallow":        make_props({DESSERT:0.9, SNACK:0.5,
+                                      D_CANDY:0.9,
+                                      S_SWEET:0.95, S_GUMMY:0.5}),
+    "Mashed Potatoes":    make_props({WESTERN:0.95,
+                                      W_AMER:0.9}),
+    "Meringue":           make_props({DESSERT:0.95, WESTERN:0.8,
+                                      D_BAKED:0.9, D_CRUNCHY:0.8,
+                                      W_EUR:0.8}),
+    "Miso Soup":          make_props({ASIAN:0.95, SOUP:0.95,
+                                      A_JAP:0.95, A_SOUP:0.95, A_FERM:0.7,
+                                      SO_BROTH:0.95, SO_ASIAN:0.95}),
+    "Mochi":              make_props({DESSERT:0.85, ASIAN:0.95,
+                                      D_FROZEN:0.3, D_CREAMY:0.4,
+                                      A_JAP:0.95, A_SWEET:0.95}),
+    "Muffin":             make_props({DESSERT:0.9, WESTERN:0.8,
+                                      D_BAKED:0.95,
+                                      W_AMER:0.7, W_BFAST:0.5}),
+    "Mushroom":           make_props({VEG:0.95,
+                                      V_WHITE:0.5, V_SMELL:0.5}),
+    "Nachos":             make_props({WESTERN:0.95, SNACK:0.5,
+                                      W_MEX:0.95, W_CHEESE:0.9,
+                                      S_SALTY:0.8, S_CRUNCHY:0.9, S_CHIP:0.6}),
+    "Oatmeal":            make_props({WESTERN:0.7,
+                                      W_BFAST:0.95}),
+    "Olive":              make_props({FRUIT:0.7,
+                                      F_GREEN:0.6, F_PIT:0.95, F_SWEET:0.05}),
+    "Omelette":           make_props({MEAT:0.4, WESTERN:0.8,
+                                      M_POULTRY:0.3, M_WEST:0.7,
+                                      W_AMER:0.6, W_EUR:0.5, W_BFAST:0.95}),
+    "Onion":              make_props({VEG:0.95,
+                                      V_GROUND:0.9, V_WHITE:0.6,
+                                      V_ONION:0.99, V_SMELL:0.99}),
+    "Orange":             make_props({FRUIT:0.95,
+                                      F_CITRUS:0.95, F_YELOR:0.8, F_LARGE:0.5,
+                                      F_PEEL:0.95, F_SWEET:0.85}),
+    "Oreos":              make_props({SNACK:0.95, DESSERT:0.5,
+                                      S_SWEET:0.9, S_CHOC:0.7,
+                                      S_COOKIE:0.95, S_CRUNCHY:0.9, S_BAG:0.9}),
+    "Oysters":            make_props({MEAT:0.95,
+                                      M_SEAFOOD:0.95, M_RAW:0.7, M_WEST:0.5,
+                                      W_SEAFOOD:0.95, W_COLD:0.6}),
+    "Pad Thai":           make_props({ASIAN:0.95, MEAT:0.6,
+                                      A_NOOD:0.95, A_FRIED:0.8, A_SPICY:0.5,
+                                      M_ASIAN:0.95}),
+    "Pain au Chocolat":   make_props({DESSERT:0.9, WESTERN:0.95,
+                                      D_BAKED:0.95, D_CHOC:0.95,
+                                      D_CRUNCHY:0.7, D_FRENCH:0.95,
+                                      W_EUR:0.95}),
+    "Pancakes":           make_props({DESSERT:0.6, WESTERN:0.8,
+                                      D_FRUIT:0.3,
+                                      W_AMER:0.9, W_BFAST:0.95}),
+    "Papaya":             make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_YELOR:0.7, F_LARGE:0.8,
+                                      F_SWEET:0.85, F_PEEL:0.9}),
+    "Passion Fruit":      make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_SWEET:0.8, F_PEEL:0.9}),
+    "Pasta":              make_props({WESTERN:0.95,
+                                      W_EUR:0.95, W_PASTA:0.95}),
+    "Peach":              make_props({FRUIT:0.95,
+                                      F_YELOR:0.6, F_RED:0.5,
+                                      F_PIT:0.95, F_SWEET:0.9}),
+    "Peach Cobbler":      make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_BAKED:0.95, D_FRUIT:0.95,
+                                      W_AMER:0.95}),
+    "Peanuts":            make_props({SNACK:0.95,
+                                      S_SALTY:0.8, S_NUT:0.95,
+                                      S_CRUNCHY:0.9, S_BAG:0.8}),
+    "Pear":               make_props({FRUIT:0.95,
+                                      F_GREEN:0.5, F_SWEET:0.85}),
+    "Peas":               make_props({VEG:0.95,
+                                      V_GREEN:0.95, V_LEGUME:0.95}),
+    "Pecan Pie":          make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_BAKED:0.95, D_CRUNCHY:0.7,
+                                      W_AMER:0.95}),
+    "Pierogi":            make_props({WESTERN:0.95,
+                                      W_EUR:0.95, W_CHEESE:0.6}),
+    "Pineapple":          make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_YELOR:0.7, F_LARGE:0.8,
+                                      F_SWEET:0.9, F_PEEL:0.95}),
+    "Pistachios":         make_props({SNACK:0.95,
+                                      S_SALTY:0.7, S_NUT:0.95,
+                                      S_CRUNCHY:0.9, S_BAG:0.8}),
+    "Pizza":              make_props({WESTERN:0.95,
+                                      W_EUR:0.7, W_AMER:0.6,
+                                      W_CHEESE:0.9}),
+    "Plum":               make_props({FRUIT:0.95,
+                                      F_RED:0.7, F_PIT:0.95,
+                                      F_SWEET:0.8, V_PURPLE:0.6}),
+    "Pomegranate":        make_props({FRUIT:0.95,
+                                      F_RED:0.95, F_LARGE:0.5,
+                                      F_SWEET:0.7, F_PEEL:0.95}),
+    "Popcorn":            make_props({SNACK:0.95,
+                                      S_SALTY:0.8, S_CRUNCHY:0.95, S_BAG:0.8}),
+    "Popcorn Chicken":    make_props({MEAT:0.95, WESTERN:0.8,
+                                      M_POULTRY:0.95, M_FRIED:0.95, M_WEST:0.8,
+                                      W_AMER:0.8}),
+    "Popsicle":           make_props({DESSERT:0.95,
+                                      D_FROZEN:0.95, D_STICK:0.95, D_FRUIT:0.5}),
+    "Potato":             make_props({VEG:0.95,
+                                      V_GROUND:0.95, V_WHITE:0.8, V_STARCH:0.95}),
+    "Potato Chips":       make_props({SNACK:0.95,
+                                      S_SALTY:0.95, S_CHIP:0.95,
+                                      S_CRUNCHY:0.95, S_BAG:0.95}),
+    "Pretzel":            make_props({SNACK:0.7, WESTERN:0.8,
+                                      S_SALTY:0.9, S_CRUNCHY:0.9,
+                                      S_CRACKER:0.5, S_BAG:0.6,
+                                      W_EUR:0.8, W_BREAD:0.8}),
+    "Pringles":           make_props({SNACK:0.95,
+                                      S_SALTY:0.95, S_CHIP:0.95,
+                                      S_CRUNCHY:0.95}),
+    "Pudding":            make_props({DESSERT:0.95, WESTERN:0.7,
+                                      D_CREAMY:0.95,
+                                      W_EUR:0.8}),
+    "Pumpkin":            make_props({VEG:0.95,
+                                      V_SQUASH:0.95, V_REDOR:0.8}),
+    "Pumpkin Pie":        make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_BAKED:0.95, D_CREAMY:0.6,
+                                      W_AMER:0.95}),
+    "Quesadilla":         make_props({WESTERN:0.95,
+                                      W_MEX:0.95, W_BREAD:0.9, W_CHEESE:0.95}),
+    "Radish":             make_props({VEG:0.95,
+                                      V_GROUND:0.95, V_REDOR:0.8,
+                                      V_RAW:0.9, V_WHITE:0.5}),
+    "Ramen":              make_props({ASIAN:0.95, SOUP:0.95, MEAT:0.6,
+                                      A_JAP:0.95, A_NOOD:0.95, A_SOUP:0.95,
+                                      SO_NOOD:0.95, SO_BROTH:0.8,
+                                      SO_MEAT:0.6, SO_ASIAN:0.95,
+                                      M_ASIAN:0.9}),
+    "Raspberry":          make_props({FRUIT:0.95,
+                                      F_BERRY:0.95, F_RED:0.95, F_SWEET:0.75}),
+    "Ratatouille":        make_props({WESTERN:0.95,
+                                      W_EUR:0.95}),
+    "Red Velvet Cake":    make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_BAKED:0.95, D_CAKE:0.95, D_CHEESE:0.8,
+                                      W_AMER:0.9}),
+    "Reese's Pieces":     make_props({SNACK:0.95, DESSERT:0.4,
+                                      S_SWEET:0.95, S_CHOC:0.7,
+                                      S_NUT:0.4, S_BAG:0.9}),
+    "Rice Krispie Treat": make_props({DESSERT:0.7, SNACK:0.7,
+                                      D_CANDY:0.6,
+                                      S_SWEET:0.9, S_CRUNCHY:0.7}),
+    "Salsa":              make_props({WESTERN:0.8,
+                                      W_MEX:0.95, W_SALAD:0.7, W_COLD:0.9}),
+    "Salty Crackers":     make_props({SNACK:0.95,
+                                      S_SALTY:0.95, S_CRACKER:0.95,
+                                      S_CRUNCHY:0.95, S_BAG:0.8}),
+    "Samosa":             make_props({ASIAN:0.9, SNACK:0.5,
+                                      A_IND:0.95, A_FRIED:0.9, A_WRAP:0.8, A_SPICY:0.7,
+                                      M_FRIED:0.9, M_WRAP:0.8, M_ASIAN:0.9,
+                                      S_SALTY:0.7, S_CRUNCHY:0.8}),
+    "Scone":              make_props({DESSERT:0.7, WESTERN:0.95,
+                                      D_BAKED:0.95, D_CRUNCHY:0.5,
+                                      W_EUR:0.95}),
+    "Scrambled Eggs":     make_props({WESTERN:0.9,
+                                      W_AMER:0.7, W_BFAST:0.95}),
+    "Seaweed Snack":      make_props({SNACK:0.95, ASIAN:0.8,
+                                      S_SALTY:0.8, S_CRUNCHY:0.8,
+                                      S_BAG:0.9, S_ASIAN:0.95,
+                                      A_JAP:0.7, A_COLD:0.7}),
+    "Shawarma":           make_props({MEAT:0.95,
+                                      M_POULTRY:0.6, M_BEEF:0.5,
+                                      M_WRAP:0.95, M_SAUCE:0.8, M_GRILL:0.7}),
+    "Shrimp":             make_props({MEAT:0.95,
+                                      M_SEAFOOD:0.95, M_FRIED:0.5,
+                                      M_GRILL:0.5, M_WEST:0.5,
+                                      W_SEAFOOD:0.9}),
+    "Skittles":           make_props({SNACK:0.95, DESSERT:0.4,
+                                      S_SWEET:0.95, S_GUMMY:0.5, S_BAG:0.9}),
+    "Smoothie Bowl":      make_props({DESSERT:0.5,
+                                      D_FRUIT:0.8, D_CREAMY:0.6,
+                                      W_BFAST:0.9, W_COLD:0.9}),
+    "Sorbet":             make_props({DESSERT:0.95,
+                                      D_FROZEN:0.95, D_FRUIT:0.7}),
+    "Spinach":            make_props({VEG:0.95,
+                                      V_GREEN:0.95, V_LEAFY:0.95, V_RAW:0.8}),
+    "Spring Rolls":       make_props({ASIAN:0.95, SNACK:0.4,
+                                      A_CHI:0.8, A_FRIED:0.8, A_WRAP:0.95,
+                                      M_FRIED:0.8, M_WRAP:0.9, M_ASIAN:0.9}),
+    "Squash":             make_props({VEG:0.95,
+                                      V_SQUASH:0.95, V_REDOR:0.4}),
+    "Strawberry":         make_props({FRUIT:0.95,
+                                      F_BERRY:0.95, F_RED:0.95,
+                                      F_SWEET:0.9}),
+    "Sushi":              make_props({ASIAN:0.95, MEAT:0.8,
+                                      A_JAP:0.95, A_COLD:0.9,
+                                      A_WRAP:0.7, A_RICE:0.95,
+                                      M_SEAFOOD:0.8, M_RAW:0.8,
+                                      M_ASIAN:0.95}),
+    "Sweet Potato":       make_props({VEG:0.95,
+                                      V_GROUND:0.95, V_REDOR:0.9, V_STARCH:0.95}),
+    "Tacos":              make_props({MEAT:0.7, WESTERN:0.95,
+                                      M_BREAD:0.9, M_WEST:0.95,
+                                      W_MEX:0.95, W_BREAD:0.9}),
+    "Tamarind":           make_props({FRUIT:0.95,
+                                      F_TROP:0.95, F_SWEET:0.3}),
+    "Tangerine":          make_props({FRUIT:0.95,
+                                      F_CITRUS:0.95, F_YELOR:0.8,
+                                      F_PEEL:0.95, F_SWEET:0.9}),
+    "Tart":               make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_BAKED:0.95, D_CRUNCHY:0.6,
+                                      D_FRUIT:0.5, D_FRENCH:0.8,
+                                      W_EUR:0.9}),
+    "Tiramisu":           make_props({DESSERT:0.95, WESTERN:0.9,
+                                      D_CREAMY:0.9, D_CHEESE:0.4,
+                                      D_FRENCH:0.9,
+                                      W_EUR:0.9}),
+    "Toffee":             make_props({DESSERT:0.95, SNACK:0.6,
+                                      D_CANDY:0.95, D_CRUNCHY:0.8,
+                                      S_SWEET:0.95, S_CRUNCHY:0.8}),
+    "Tomato":             make_props({FRUIT:0.8,
+                                      F_RED:0.95, F_VINE:0.9, F_SWEET:0.3}),
+    "Tomato Soup":        make_props({SOUP:0.95, WESTERN:0.9,
+                                      SO_TOM:0.99, SO_CREAM:0.5,
+                                      SO_VEG:0.8,
+                                      W_AMER:0.7, W_EUR:0.5, W_SOUP:0.95}),
+    "Trail Mix":          make_props({SNACK:0.95,
+                                      S_SWEET:0.4, S_SALTY:0.5,
+                                      S_NUT:0.9, S_BAG:0.8}),
+    "Turkish Delight":    make_props({DESSERT:0.95,
+                                      D_CANDY:0.95, D_CREAMY:0.3}),
+    "Wafer":              make_props({SNACK:0.7, DESSERT:0.6,
+                                      D_BAKED:0.9, D_CRUNCHY:0.95,
+                                      S_SWEET:0.6, S_CRUNCHY:0.95, S_CRACKER:0.4}),
+    "Waffles":            make_props({DESSERT:0.6, WESTERN:0.8,
+                                      D_BAKED:0.8, D_FRUIT:0.3,
+                                      W_AMER:0.8, W_BFAST:0.9}),
+    "Watermelon":         make_props({FRUIT:0.95,
+                                      F_MELON:0.95, F_RED:0.8, F_LARGE:0.99,
+                                      F_SWEET:0.95, F_PEEL:0.95}),
+    "Yogurt Parfait":     make_props({DESSERT:0.5,
+                                      D_FRUIT:0.7, D_CREAMY:0.7,
+                                      W_BFAST:0.8, W_COLD:0.8}),
+    "Zucchini":           make_props({VEG:0.95,
+                                      V_GREEN:0.95}),
 }
 
-# QUESTION RULES
-# each tag maps to float weights for each of the 20 questions
-# Format: tag -> [Q00, Q01, Q02, Q03, Q04, Q05, Q06, Q07, Q08, Q09, Q10, Q11, Q12, Q13, Q14, Q15, Q16, Q17, Q18, Q19]
-tag_weights = {
-    #                        Q00   Q01   Q02   Q03   Q04   Q05   Q06   Q07   Q08   Q09   Q10   Q11   Q12   Q13   Q14   Q15   Q16   Q17   Q18   Q19
-    # FOOD TYPE
-    "dessert":              [1.00, 0.30, 0.00, 0.00, 0.00, 0.90, 0.00, 0.00, 0.00, 0.00, 0.00, 0.50, 0.20, 0.30, 0.10, 0.00, 0.00, 0.00, 0.20, 0.00],
-    "fruit":                [0.10, 0.00, 0.00, 1.00, 0.00, 0.70, 0.60, 0.00, 0.20, 0.20, 0.20, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00],
-    "vegetable":            [0.00, 0.40, 0.00, 0.00, 1.00, 0.10, 0.00, 0.20, 0.40, 0.20, 0.20, 0.40, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00],
-    "snack":                [0.10, 0.10, 0.10, 0.00, 0.00, 0.20, 0.00, 0.00, 0.00, 0.00, 0.00, 0.90, 0.20, 0.10, 0.00, 0.20, 0.10, 0.00, 0.10, 1.00],
-    "candy":                [0.20, 0.00, 0.00, 0.00, 0.00, 0.90, 0.00, 0.00, 0.00, 0.00, 0.00, 0.90, 0.00, 0.00, 0.00, 0.10, 0.00, 0.00, 0.00, 1.00],
-    "seafood":              [0.00, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.40, 0.10, 0.00, 0.00, 0.10, 0.20, 0.00, 0.00, 1.00],
+# sanity check
+assert len(foods) == NUM_FOODS, f"Expected {NUM_FOODS} foods, got {len(foods)}"
+assert len(props) == NUM_FOODS, f"Expected {NUM_FOODS} props, got {len(props)}"
+print(f"OK: {NUM_FOODS} foods defined")
 
-    # COOKING METHOD
-    "baked":                [0.30, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.20, 0.00, 0.50, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00],
-    "fried":                [0.10, 0.90, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.70, 1.00, 0.20, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00],
-    "pan_cooked":           [0.20, 0.90, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.50, 0.00, 0.20, 0.00, 0.00, 0.00, 0.00, 0.30, 0.00],
-    "raw":                  [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
+# ── Write dataset.c ───────────────────────────────────────
+lines = []
+lines.append("/* dataset.c — AUTO GENERATED by generate_dataset.py */")
+lines.append("/* Do not edit by hand. Edit generate_dataset.py and rerun. */")
+lines.append("")
+lines.append('#include "dataset.h"')
+lines.append("")
 
-    # TEMPERATURE
-    "hot":                  [0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "cold":                 [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "frozen":               [0.50, 0.00, 0.00, 0.00, 0.00, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-
-    # TASTE
-    "sweet":                [0.60, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "sour":                 [0.00, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "spicy":                [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "nutty":                [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.90, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-
-    # TEXTURE
-    "creamy":               [0.30, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.50, 0.00, 0.00],
-    "chewy":                [0.10, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "soft":                 [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "layered":              [0.30, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-
-    # INGREDIENTS
-    "meat":                 [0.00, 0.80, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "cheese":               [0.00, 0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "dough":                [0.20, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "dairy":                [0.30, 0.00, 0.00, 0.00, 0.00, 0.30, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00],
-    "noodles":              [0.00, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "chocolate":            [0.60, 0.00, 0.00, 0.00, 0.00, 0.90, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "fruit_based":          [0.30, 0.00, 0.00, 0.00, 0.00, 0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-
-    # GROW LOCATION
-    "tree_fruit":           [0.00, 0.00, 0.00, 0.90, 0.00, 0.70, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "vine_fruit":           [0.00, 0.00, 0.00, 0.90, 0.00, 0.70, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "berry":                [0.00, 0.00, 0.00, 0.90, 0.00, 0.80, 0.60, 0.00, 0.00, 0.00, 0.00, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "tropical":             [0.00, 0.00, 0.00, 0.90, 0.00, 0.70, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.10, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "melon":                [0.00, 0.00, 0.00, 0.90, 0.00, 0.80, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "citrus":               [0.00, 0.00, 0.00, 0.90, 0.00, 0.50, 1.00, 0.00, 0.00, 0.00, 0.50, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "underground":          [0.00, 0.00, 0.00, 0.00, 0.80, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-
-    # COLOUR
-    "green":                [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "red_orange":           [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "white_yellow":         [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "purple":               [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-
-    # CUISINE
-    "italian":              [0.00, 0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.20, 1.00, 0.00, 0.00, 0.00],
-    "french":               [0.00, 0.50, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.20, 1.00, 0.00, 0.00, 0.00],
-    "european":             [0.00, 0.50, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.20, 1.00, 0.00, 0.00, 0.00],
-    "british":              [0.00, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.20, 1.00, 0.00, 0.00, 0.00],
-    "german":               [0.00, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.20, 1.00, 0.00, 0.00, 0.00],
-    "polish":               [0.00, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.20, 1.00, 0.00, 0.00, 0.00],
-    "asian":                [0.00, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "japanese":             [0.00, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "chinese":              [0.00, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "korean":               [0.00, 0.50, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "indian":               [0.00, 0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "american":             [0.00, 0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00],
-    "western":              [0.00, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00],
-    "mexican":              [0.00, 0.60, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00],
-    "middle_eastern":       [0.00, 0.50, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.20, 0.50, 0.00, 0.00, 0.00],
-
-    # SERVING STYLE
-    "handheld":             [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "soup":                 [0.00, 0.80, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00],
-    "liquid":               [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00, 0.00],
-    "vegetarian":           [0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-    "vegetable_dish":       [0.00, 0.50, 0.00, 0.00, 0.30, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00],
-
-    # MEAL TIME
-    "breakfast":            [0.00, 0.70, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 0.00, 1.00, 0.00],
-}
-
-# COMPUTE PROPERTY TABLE
-# for each food, average the weights of all its tags
-NUM_FOODS = len(foods)
-NUM_QUESTIONS = len(questions)
-
-def compute_properties(food):
-    tags = food_tags.get(food, [])
-    if not tags:
-        return [0.0] * NUM_QUESTIONS
-    totals = [0.0] * NUM_QUESTIONS
-    counts = [0]   * NUM_QUESTIONS
-    for tag in tags:
-        if tag in tag_weights:
-            for q in range(NUM_QUESTIONS):
-                totals[q] += tag_weights[tag][q]
-                counts[q] += 1
-    result = []
-    for q in range(NUM_QUESTIONS):
-        if counts[q] > 0:
-            val = totals[q] / counts[q]
-        else:
-            val = 0.0
-        result.append(round(min(1.0, max(0.0, val)), 2))
-    return result
-
-properties = {}
-for food in foods:
-    properties[food] = compute_properties(food)
-
-# OUTPUT dataset.c
-c_output = []
-c_output.append("/* ----------------------------------------------------------")
-c_output.append(" * dataset.c")
-c_output.append(" * AUTO GENERATED by generate_dataset.py")
-c_output.append(f" * {NUM_FOODS} foods x {NUM_QUESTIONS} questions")
-c_output.append(" * ----------------------------------------------------------*/")
-c_output.append("")
-c_output.append('#include "dataset.h"')
-c_output.append("")
-c_output.append(f"#define NUM_FOODS     {NUM_FOODS}")
-c_output.append(f"#define NUM_QUESTIONS {NUM_QUESTIONS}")
-c_output.append("")
-
-# food names array
-c_output.append(f"const char *food_names[{NUM_FOODS}] = {{")
-for i, food in enumerate(foods):
+# food_names array
+lines.append(f"const char *food_names[{NUM_FOODS}] = {{")
+for i, f in enumerate(foods):
     comma = "," if i < NUM_FOODS - 1 else ""
-    c_output.append(f'    "{food}"{comma}')
-c_output.append("};")
-c_output.append("")
+    lines.append(f'    "{f}"{comma}')
+lines.append("};")
+lines.append("")
 
 # questions array
-c_output.append(f"const char *questions[{NUM_QUESTIONS}] = {{")
+questions = [
+    "Is it a dessert or sweet treat?",
+    "Is it a fruit?",
+    "Is it a vegetable?",
+    "Is it from Asian cuisine?",
+    "Is it a snack or candy?",
+    "Is it a soup or liquid dish?",
+    "Does it contain meat or seafood?",
+    "Is it a Western or European dish?",
+    "Is it frozen or served very cold?",
+    "Is it baked in an oven?",
+    "Does it contain chocolate?",
+    "Does it contain cheese or cream cheese?",
+    "Is it a cake (has layers or frosting)?",
+    "Is it fried?",
+    "Is it a candy or confection?",
+    "Does it contain fruit?",
+    "Is it creamy or mousse-like?",
+    "Does it come on a stick or in a cone?",
+    "Is it crunchy or crispy?",
+    "Is it from French or Italian cuisine?",
+    "Is it a citrus fruit?",
+    "Is it a berry?",
+    "Is it a tropical fruit?",
+    "Is it yellow or orange in colour?",
+    "Is it red or pink in colour?",
+    "Is it green in colour?",
+    "Is it larger than a tennis ball?",
+    "Does it have a hard pit or large seed?",
+    "Is it sweet (not sour or bitter)?",
+    "Does it have a peel or thick skin?",
+    "Does it grow on a vine?",
+    "Is it a melon?",
+    "Does it grow underground?",
+    "Is it green in colour?",
+    "Is it red or orange in colour?",
+    "Is it white or pale in colour?",
+    "Is it typically eaten raw?",
+    "Is it a leafy green?",
+    "Is it part of the onion or garlic family?",
+    "Is it starchy?",
+    "Is it a squash or gourd?",
+    "Is it a legume (bean or pea)?",
+    "Does it have a strong smell?",
+    "Is it purple?",
+    "Is it Japanese?",
+    "Is it Chinese?",
+    "Is it Indian or South Asian?",
+    "Does it contain noodles?",
+    "Does it contain rice?",
+    "Is it wrapped or rolled?",
+    "Is it a soup or broth?",
+    "Is it spicy?",
+    "Is it raw or served cold?",
+    "Is it fried?",
+    "Is it fermented?",
+    "Is it sweet?",
+    "Is it sweet?",
+    "Is it salty or savoury?",
+    "Does it contain chocolate?",
+    "Is it a nut or seed?",
+    "Is it a chip or crisp?",
+    "Is it a gummy or chewy candy?",
+    "Is it a cookie or biscuit?",
+    "Is it a chocolate bar?",
+    "Does it come in a bag?",
+    "Is it crunchy?",
+    "Is it from Asia?",
+    "Is it a cracker?",
+    "Does it have noodles or pasta?",
+    "Does it have rice?",
+    "Is it broth-based (clear liquid)?",
+    "Is it cream-based or thick?",
+    "Is it tomato-based?",
+    "Does it contain meat or seafood?",
+    "Is it spicy?",
+    "Is it from Asian cuisine?",
+    "Does it have cheese on top?",
+    "Is it served cold?",
+    "Is it chunky or stew-like?",
+    "Is it vegetable-based?",
+    "Is it seafood?",
+    "Is it poultry (chicken or duck)?",
+    "Is it beef or pork?",
+    "Is it fried?",
+    "Is it served in bread or a bun?",
+    "Is it grilled or BBQ?",
+    "Is it wrapped or rolled?",
+    "Is it served on a stick or skewer?",
+    "Does it have a sauce or marinade?",
+    "Is it from Asian cuisine?",
+    "Is it from Western cuisine?",
+    "Is it raw or cured?",
+    "Is it American?",
+    "Is it Mexican?",
+    "Is it from Europe?",
+    "Is it fried?",
+    "Does it come in bread or a bun?",
+    "Does it contain cheese?",
+    "Is it a soup or stew?",
+    "Is it a breakfast food?",
+    "Is it a seafood dish?",
+    "Is it served cold?",
+    "Is it a salad or dip?",
+    "Does it contain pasta or noodles?",
+]
+
+lines.append(f"const char *questions[{NUM_QUESTIONS}] = {{")
 for i, q in enumerate(questions):
     comma = "," if i < NUM_QUESTIONS - 1 else ""
-    c_output.append(f'    "{q}"{comma}')
-c_output.append("};")
-c_output.append("")
+    lines.append(f'    "{q}"{comma}')
+lines.append("};")
+lines.append("")
 
-# property table
-c_output.append(f"float properties[{NUM_FOODS}][{NUM_QUESTIONS}] = {{")
+# pool_defs
+lines.append("int pool_defs[8][4] = {")
+lines.append("    {8,   20,  0, 0},")
+lines.append("    {20,  32,  1, 0},")
+lines.append("    {32,  44,  2, 0},")
+lines.append("    {44,  56,  3, 0},")
+lines.append("    {56,  68,  4, 0},")
+lines.append("    {68,  80,  5, 0},")
+lines.append("    {80,  92,  6, 0},")
+lines.append("    {92,  104, 7, 0},")
+lines.append("};")
+lines.append("")
+
+# properties table
+lines.append(f"float properties[{NUM_FOODS}][{NUM_QUESTIONS}] = {{")
 for i, food in enumerate(foods):
-    props = properties[food]
-    props_str = ", ".join(f"{v:.2f}" for v in props)
+    row = props[food]
+    vals = ", ".join(f"{v:.2f}" for v in row)
     comma = "," if i < NUM_FOODS - 1 else ""
-    c_output.append(f"    /* {i:3d} {food:<30s} */ {{{props_str}}}{comma}")
-c_output.append("};")
+    lines.append(f"    /* {i:3d} {food:<28} */ {{{vals}}}{comma}")
+lines.append("};")
 
-dataset_c = "\n".join(c_output)
-
-# OUTPUT dataset.h
-h_output = []
-h_output.append("/* ----------------------------------------------------------")
-h_output.append(" * dataset.h")
-h_output.append(" * AUTO GENERATED by generate_dataset.py")
-h_output.append(" * ----------------------------------------------------------*/")
-h_output.append("")
-h_output.append("#ifndef DATASET_H")
-h_output.append("#define DATASET_H")
-h_output.append("")
-h_output.append(f"#define NUM_FOODS     {NUM_FOODS}")
-h_output.append(f"#define NUM_QUESTIONS {NUM_QUESTIONS}")
-h_output.append("")
-h_output.append(f"extern const char *food_names[{NUM_FOODS}];")
-h_output.append(f"extern const char *questions[{NUM_QUESTIONS}];")
-h_output.append(f"extern float properties[{NUM_FOODS}][{NUM_QUESTIONS}];")
-h_output.append("")
-h_output.append("#endif")
-
-dataset_h = "\n".join(h_output)
-
-# WRITE FILES
 with open("dataset.c", "w") as f:
-    f.write(dataset_c)
+    f.write("\n".join(lines))
 
-with open("dataset.h", "w") as f:
-    f.write(dataset_h)
-
-print(f"Done! Generated dataset.c and dataset.h")
-print(f"  {NUM_FOODS} foods")
-print(f"  {NUM_QUESTIONS} questions")
-print(f"  {NUM_FOODS * NUM_QUESTIONS} total property values")
-print()
-print("First 5 foods and their properties:")
-for food in foods[:5]:
-    props = properties[food]
-    print(f"  {food}: {props}")
+print("Written to dataset.c")

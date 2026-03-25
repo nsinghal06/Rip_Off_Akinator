@@ -3,6 +3,7 @@
 #include "vga_display.h"
 #include "answer_input.h"
 #include "category_select.h"
+#include "bayes_engine.h"
 
 #define WELCOME 0
 #define CATEGORY_SELECT 1
@@ -41,37 +42,46 @@ void run_game(void) {
             }
             category = read_category(); //returns 0, 1, 2, 3 for food animal country movie -1 invalid
             if (category != -1) { //invalid switch input, keep polling
-                hex_display(category); //TO DO
-                bayes_thm(category); //TO DO, tells bayes which dataset/category to load
+                hex_start_marquee(category); //TO DO - scrolls category name on HEX0-3
+                bayes_init();               //initialise equal probabilities, reset asked[]
+                questions_asked = 0;        //reset counter for new game
+                prev_state = -1;            //force PLAYING to redraw on entry
                 state = PLAYING;
             }
         }
 
         // ---------- PLAYING ----------
         else if (state == PLAYING) {
+            int q;                          //declare here so whole block can see it
+
             if (prev_state != PLAYING) {    
                 vga_draw_background(category); 
                 hex_set_questions(20); //TO DO
                 prev_state = PLAYING;
             
                 //swap question text each round
-                int questions_asked = 0;
-                int q = question(); //TO DO
-                vga_draw_question(q); // only redraws text
+                q = bayes_next_question();  //get first best question
+                vga_draw_question(q);       // only redraws text
                 //audio_thinking(); //TO DO
             }
 
             last_answer = wait_for_answer();
             if (last_answer == 0 || last_answer == 1) {
-                bayes_update(q, last_answer); //TO DO, update algorithm with new information
+                bayes_update(q, last_answer); //update algorithm with new information
                 questions_asked++;
-                hex_set_questions(20 - questions_asked);
+                hex_set_questions(20 - questions_asked); //TO DO
 
             //check game conditions
-            if (bayes_probability() > 0.90) state = GUESS; //TO DO
-            else if (questions_asked >= 20) state = GUESS;
+            if (bayes_top_probability() > 0.90) { //confident enough to guess
+                prev_state = -1;            //force GUESS to redraw on entry
+                state = GUESS;
+            }
+            else if (questions_asked >= 20) { //ran out of questions, guess anyway
+                prev_state = -1;
+                state = GUESS;
+            }
             else { //still playing
-                int q = question();  
+                q = bayes_next_question();  //get next best question
                 vga_draw_question(q);
             }
         }
@@ -80,14 +90,16 @@ void run_game(void) {
         // ---------- GUESS ----------
         else if (state == GUESS) {
             if (prev_state != GUESS) {      // just entered GUESS
-                int guess = bayes_top_candidate();
+                int guess = bayes_top_candidate(); //index of most likely food
                 vga_draw_guess(guess);      // draw screen ONCE
-                audio_play_guess();
+                audio_play_guess();         //TO DO
                 prev_state = GUESS;
             }
             // just wait here until user acknowledges
-            if (key_pressed())
+            if (key_pressed()) {
+                prev_state = -1;            //force RESULT to redraw on entry
                 state = RESULT;
+            }
         }
 
         // ── RESULT ───────────────────────────────────────────
@@ -98,8 +110,10 @@ void run_game(void) {
                 );
                 prev_state = RESULT;
             }
-            if (key_pressed())
+            if (key_pressed()) {
+                prev_state = -1;            //reset for fresh WELCOME on restart
                 state = WELCOME;
+            }
         }
     }
 }

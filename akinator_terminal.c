@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
+//#include <math.h>
 
 #include "dataset.h"
 #include "dataset.c"
@@ -11,6 +11,18 @@ int any_pool_unlocked = 0;
 static float probabilities[127];
 static int   asked[130];
 static int   pool_unlocked[8];
+
+// Fast natural log approximation for embedded - no math.h needed
+static float fast_log2(float x) {
+    if (x <= 0.0f) return -100.0f;
+    int exp = 0;
+    while (x < 1.0f) { x *= 2.0f; exp--; }
+    while (x >= 2.0f) { x *= 0.5f; exp++; }
+    // Polynomial approximation of log2 for x in [1,2)
+    float y = x - 1.0f;
+    float result = y * (1.4426950f - y * (0.7213475f - y * 0.4808983f));
+    return result + (float)exp;
+}
 
 //initialize probabilities to equal at game start
 static void bayes_init(void) {
@@ -80,7 +92,7 @@ static int bayes_next_question(void) {
         float H_current_p1 = 0.0f;
         for (i = 0; i < NUM_FOODS; i++) {
             if (probabilities[i] > 1e-9f)
-                H_current_p1 -= probabilities[i] * (logf(probabilities[i]) / logf(2.0f));
+                H_current_p1 -= probabilities[i] * (fast_log2(probabilities[i]));
         }
         for (q = 0; q < P1_END; q++) {
             if (asked[q]) continue;
@@ -92,13 +104,13 @@ static int bayes_next_question(void) {
             if (p_yes > 1e-6f) {
                 for (i = 0; i < NUM_FOODS; i++) {
                     float post = (probabilities[i] * properties[i][q]) / p_yes;
-                    if (post > 1e-9f) H_yes -= post * (logf(post) / logf(2.0f));
+                    if (post > 1e-9f) H_yes -= post * (fast_log2(post));
                 }
             }
             if (p_no > 1e-6f) {
                 for (i = 0; i < NUM_FOODS; i++) {
                     float post = (probabilities[i] * (1.0f - properties[i][q])) / p_no;
-                    if (post > 1e-9f) H_no -= post * (logf(post) / logf(2.0f));
+                    if (post > 1e-9f) H_no -= post * (fast_log2(post));
                 }
             }
             float ig = H_current_p1 - (p_yes * H_yes + p_no * H_no);
@@ -112,7 +124,7 @@ static int bayes_next_question(void) {
     float H_current = 0.0f;
     for (i = 0; i < NUM_FOODS; i++) {
         if (probabilities[i] > 1e-9f)
-            H_current -= probabilities[i] * (logf(probabilities[i]) / logf(2.0f));
+            H_current -= probabilities[i] * (fast_log2(probabilities[i]));
     }
 
     // 3. FOCUSED MODE
@@ -223,12 +235,12 @@ static int bayes_next_question(void) {
                 for (int t = 0; t < focus_count; t++) {
                     if (top3[t] < 0) continue;
                     float post = (probabilities[top3[t]] * properties[top3[t]][q]) / p_yes;
-                    if (post > 1e-9f) H_yes -= post * (logf(post) / logf(2.0f));
+                    if (post > 1e-9f) H_yes -= post * (fast_log2(post));
                 }
             } else {
                 for (i = 0; i < NUM_FOODS; i++) {
                     float post = (probabilities[i] * properties[i][q]) / p_yes;
-                    if (post > 1e-9f) H_yes -= post * (logf(post) / logf(2.0f));
+                    if (post > 1e-9f) H_yes -= post * (fast_log2(post));
                 }
             }
         }
@@ -239,12 +251,12 @@ static int bayes_next_question(void) {
                 for (int t = 0; t < focus_count; t++) {
                     if (top3[t] < 0) continue;
                     float post = (probabilities[top3[t]] * (1.0f - properties[top3[t]][q])) / p_no;
-                    if (post > 1e-9f) H_no -= post * (logf(post) / logf(2.0f));
+                    if (post > 1e-9f) H_no -= post * (fast_log2(post));
                 }
             } else {
                 for (i = 0; i < NUM_FOODS; i++) {
                     float post = (probabilities[i] * (1.0f - properties[i][q])) / p_no;
-                    if (post > 1e-9f) H_no -= post * (logf(post) / logf(2.0f));
+                    if (post > 1e-9f) H_no -= post * (fast_log2(post));
                 }
             }
         }

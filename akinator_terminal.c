@@ -72,6 +72,7 @@ static float bayes_top_probability(void) {
 }
 
 // concept of entropy: measures how confused the computation is
+//information gain: how much a question reduces entropy/confusion, compares between current entropy and expected future entropy after asking a question
 // If all candidates have equal probability, entropy is high
 // If one candidate has 99% probability, entropy is low
 // We want to pick questions that reduce entropy the most (gives the most information).
@@ -80,20 +81,23 @@ static int bayes_next_question(void) {
     int best_q  = -1;
     float best_ig = -1.0f;
 
-    // 1. PHASE 1 — use information gain to pick best phase 1 question
+    // 1. PHASE 1 use information gain to pick best phase 1 question
     int all_p1_asked = 1;
-    for (i = 0; i < P1_END; i++) {
-        if (!asked[i]) { all_p1_asked = 0; break; }
+    for (i = 0; i < P1_END; i++) { //checking all pools
+        if (!asked[i]) { all_p1_asked = 0; break; } //ask all pools
     }
 
-    if (!all_p1_asked) {
+    if (!all_p1_asked) { //still asking all pools, this will pick best phase 1 question 
         float best_ig_p1 = -1.0f;
         int   best_p1_q  = -1;
-        float H_current_p1 = 0.0f;
+        float H_current_p1 = 0.0f; //current entropy 
         for (i = 0; i < NUM_FOODS; i++) {
             if (probabilities[i] > 1e-9f)
-                H_current_p1 -= probabilities[i] * (fast_log2(probabilities[i]));
+                H_current_p1 -= probabilities[i] * (fast_log2(probabilities[i])); //formula to calculate entropy of current system
         }
+
+        //information gain = current confusion - expected future confusion
+        //highest information gain means reduces confusion the most
         for (q = 0; q < P1_END; q++) {
             if (asked[q]) continue;
             float p_yes = 0.0f;
@@ -120,7 +124,7 @@ static int bayes_next_question(void) {
     }
 
     // 2. ENTROPY CALCULATION
-    // Phase 1 is done. Calculate current system entropy.
+    // Phase 1 done, calculate current system entropy
     float H_current = 0.0f;
     for (i = 0; i < NUM_FOODS; i++) {
         if (probabilities[i] > 1e-9f)
@@ -144,21 +148,20 @@ static int bayes_next_question(void) {
         }
     }
 
-    // Focused mode triggers when top 2 are both high and close together
-    // and no clear winner yet
+    // focused mode triggers when top 2 are both high and close together and no clear winner yet
     int focused_mode = 0;
     float gap = top3_prob[0] - top3_prob[1];
     if (top3_prob[1] > 0.25f && top3_prob[0] < 0.75f && gap < 0.15f) {
         focused_mode = 1;
     }
 
-    // If top 3rd candidate is very low, focus on just top 2
+    // if top 3rd candidate is very low, focus on just top 2
     int focus_count = 3;
     if (top3_prob[2] < 0.05f) focus_count = 2;
 
     // 4. SMART POOL-BASED QUESTION SELECTION
-    // Find which unlocked pool has the most probability mass
-    // This makes the AI sticky to the most likely category
+    // find which unlocked pool has the most probability 
+    // makes AI stick to the most likely category
     int current_best_pool = -1;
     float max_pool_prob   = -1.0f;
 
@@ -178,7 +181,7 @@ static int bayes_next_question(void) {
     for (q = 0; q < NUM_QUESTIONS; q++) {
         if (asked[q]) continue;
 
-        // --- ENFORCED POOL STICKINESS ---
+        // --------------- ENFORCED POOL STICKINESS ---------------
         int q_pool = -1;
         for (p = 0; p < NUM_POOLS; p++) {
             if (q >= pool_defs[p][0] && q < pool_defs[p][1]) {
@@ -187,7 +190,7 @@ static int bayes_next_question(void) {
             }
         }
 
-        // Skip questions not in the best pool unless that pool is exhausted
+        // skip questions not in the best pool unless that pool is finished
         if (current_best_pool != -1 && q_pool != current_best_pool) {
             int questions_left_in_best = 0;
             for (int k = pool_defs[current_best_pool][0]; k < pool_defs[current_best_pool][1]; k++) {
@@ -196,7 +199,7 @@ static int bayes_next_question(void) {
             if (questions_left_in_best > 0) continue;
         }
 
-        // Safety: skip questions not in any unlocked pool
+        // safety: skip questions not in any unlocked pool
         int is_unlocked = 0;
         for (p = 0; p < NUM_POOLS; p++) {
             if (q >= pool_defs[p][0] && q < pool_defs[p][1] && pool_unlocked[p]) {
@@ -207,11 +210,12 @@ static int bayes_next_question(void) {
         if (!is_unlocked) continue;
 
         // 5. INFORMATION GAIN CALCULATION
-        // Focused mode: only consider top 2 or 3 candidates
-        // Normal mode:  consider all foods
+        // focused mode: only consider top 2 or 3 candidates
+        // normal mode: consider all foods
         float p_yes = 0.0f;
         float total_weight = 0.0f;
 
+        //if focused only focus on top 3 
         if (focused_mode) {
             for (int t = 0; t < focus_count; t++) {
                 if (top3[t] < 0) continue;
@@ -226,9 +230,10 @@ static int bayes_next_question(void) {
                 }
             }
         }
-        if (total_weight > 0) p_yes /= total_weight;
+        if (total_weight > 0) p_yes /= total_weight; //normalizing it
         float p_no = 1.0f - p_yes;
 
+        //recalculate actual entropy of yes and no branches after the question
         float H_yes = 0.0f;
         if (p_yes > 1e-6f) {
             if (focused_mode) {
@@ -261,21 +266,22 @@ static int bayes_next_question(void) {
             }
         }
 
-        // Calculate information gain and track best question
-        float expected_H = p_yes * H_yes + p_no * H_no;
-        float ig = H_current - expected_H;
+        // calculate information gain and track best question
+        float expected_H = p_yes * H_yes + p_no * H_no; //expected future confusion after asking this question
+        float ig = H_current - expected_H; //how much this question reduces confusion
 
-        if (ig > best_ig) {
+        if (ig > best_ig) { //track to find best question
             best_ig = ig;
             best_q  = q;
         }
 
-    } // end for (q = 0; q < NUM_QUESTIONS; q++)
+    } 
 
     if (best_q >= 0) asked[best_q] = 1;
-    return best_q;
+    return best_q; 
 }
 
+//next best candidate after asking questions, final guess of computer
 static int bayes_top_candidate(void) {
     int i, best = 0;
     for (i = 1; i < NUM_FOODS; i++)
@@ -283,7 +289,7 @@ static int bayes_top_candidate(void) {
     return best;
 }
 
-/* ── TERMINAL UI ───────────────────────────────────────── */
+/* ----------------------- TERMINAL UI ----------------------- */
 
 static const char *pool_name(int q) {
     if (q < P1_END) return "PHASE1";
@@ -340,7 +346,7 @@ static int get_answer(void) {
     }
 }
 
-/* ── MAIN ──────────────────────────────────────────────── */
+/* ----------------------- MAIN ----------------------- */
 int main(void) {
     srand(time(NULL));
 
@@ -394,7 +400,7 @@ int main(void) {
             print_top5();
 
             if (bayes_top_probability() > 0.70f) {
-                printf("  >> Confidence > 75%% reached!\n\n");
+                printf("  >> Confidence > 70%% reached!\n\n");
                 break;
             }
         }

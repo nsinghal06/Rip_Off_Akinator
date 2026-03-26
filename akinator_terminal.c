@@ -171,15 +171,21 @@ static int bayes_next_question(void) {
 
     for (p = 0; p < NUM_POOLS; p++) {
         if (!pool_unlocked[p]) continue;
+
         float current_p_sum = 0.0f;
         for (i = 0; i < NUM_FOODS; i++) {
             if (properties[i][pool_defs[p][2]] > 0.8f)
                 current_p_sum += probabilities[i];
         }
+
         if (current_p_sum > max_pool_prob) {
             max_pool_prob     = current_p_sum;
             current_best_pool = p;
         }
+    }
+
+    if (pool_unlocked[4]) {
+        current_best_pool = 4;
     }
 
     for (q = 0; q < NUM_QUESTIONS; q++) {

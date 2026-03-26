@@ -87,6 +87,10 @@ static int bayes_next_question(void) {
         if (!asked[i]) { all_p1_asked = 0; break; } //ask all pools
     }
 
+    if (pool_unlocked[1] || pool_unlocked[2] ) {
+        all_p1_asked = 1;
+    }
+
     if (!all_p1_asked) { //still asking all pools, this will pick best phase 1 question 
         float best_ig_p1 = -1.0f;
         int   best_p1_q  = -1;

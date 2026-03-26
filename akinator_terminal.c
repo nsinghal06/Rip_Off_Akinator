@@ -270,6 +270,15 @@ static int bayes_next_question(void) {
         float expected_H = p_yes * H_yes + p_no * H_no; //expected future confusion after asking this question
         float ig = H_current - expected_H; //how much this question reduces confusion
 
+        if (focused_mode && top3[0] >= 0 && top3[1] >= 0) {
+            float prop_top1 = properties[top3[0]][q];
+            float prop_top2 = properties[top3[1]][q];
+            float separation = (prop_top1 - prop_top2);
+            if (separation < 0) separation = -separation;
+            ig += separation * 0.8f;
+        }
+
+
         if (ig > best_ig) { //track to find best question
             best_ig = ig;
             best_q  = q;

@@ -188,6 +188,10 @@ static int bayes_next_question(void) {
         current_best_pool = 4;
     }
 
+    if (pool_unlocked[0]) {          
+        current_best_pool = 0;
+    }
+
     for (q = 0; q < NUM_QUESTIONS; q++) {
         if (asked[q]) continue;
 

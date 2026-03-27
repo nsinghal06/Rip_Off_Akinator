@@ -4,7 +4,7 @@ from pathlib import Path
 INPUT_FILE = "dataset.c"
 OUTPUT_FILE = "dataset_new.c"
 
-NEW_QUESTION_LINE = '"Is it covered in a cheese sauce?",               /* q134 */'
+NEW_QUESTION_LINE = '"Is it chunky?",               /* q134 */'
 
 
 def replace_first(pattern, repl, text, flags=0):
@@ -24,7 +24,7 @@ def main():
         text
     )
 
-    # 2) insert new western question after q133, before the questions closing };
+    # 2) insert new western question after q133
     tail_pattern = r'(^\s*"Is it made using potatoes\?",\s*/\*\s*q133\s*\*/\s*$)'
     m = re.search(tail_pattern, text, flags=re.MULTILINE)
     if not m:
@@ -44,14 +44,14 @@ def main():
     # 4) western pool comment q115-q133 -> q115-q134
     text = text.replace('q115-q133', 'q115-q134', 1)
 
-    # 5) properties dimensions: [107][134] -> [107][135]
+    # 5) properties dimensions: [102][134] -> [102][135]
     text = replace_first(
-        r'(float\s+properties\s*\[\s*107\s*\]\s*\[\s*)134(\s*\]\s*=\s*\{)',
+        r'(float\s+properties\s*\[\s*102\s*\]\s*\[\s*)134(\s*\]\s*=\s*\{)',
         r'\g<1>135\g<2>',
         text
     )
 
-    # 6) append 0.05 to every properties row, preserving existing row comments/spacing
+    # 6) append 0.05 to every properties row
     row_pattern = re.compile(r'^(\s*/\*.*?\*/\s*\{)(.*?)(\}\s*,?\s*)$', re.MULTILINE)
 
     def extend_row(match):
@@ -66,7 +66,7 @@ def main():
     Path(OUTPUT_FILE).write_text(text, encoding="utf-8")
 
     print(f"Done. Wrote {OUTPUT_FILE}")
-    print("Added q134: Is it covered in a cheese sauce?")
+    print('Added q134: "Is it chunky?"')
     print(f"Extended {row_count} properties rows with trailing 0.05")
 
 

@@ -1173,16 +1173,10 @@ static int draw_wrapped(const char *src, int y, int max_w, short int color) {
     return y;
 }
 
-//  KEY POLLING  (level-based edge detect, no edgecap register)
-static int prev_keys = 0;
-
-// Returns bitmask of newly pressed keys this call (rising edge)
-// Bit 0 = KEY0, Bit 1 = KEY1, Bit 2 = KEY2, Bit 3 = KEY3
 static int keys_pressed(void) {
     volatile int *kp = (volatile int *)KEY_BASE;
-    int cur  = (*kp) & 0xF;
-    int edge = cur & ~prev_keys;
-    prev_keys = cur;
+    int edge = *(kp + 3) & 0xF;
+    *(kp + 3) = edge;
     return edge;
 }
 
@@ -1592,6 +1586,7 @@ int main(void) {
 
         // -------- Asking questions --------
         case 3: {
+            int key3 = (kp & 0x8);
             int answer = -1;
             if (key2) answer = 0;        // KEY2 = YES
             else if (key0) answer = 1;   // KEY0 = NO

@@ -1587,6 +1587,17 @@ int main(void) {
         // -------- Asking questions --------
         case 3: {
             int key3 = (kp & 0x8);
+            if (key3) {
+                bayes_init();
+                questions_left  = 20;
+                questions_asked = 0;
+                current_q = bayes_next_question();
+                draw_question_screen(current_q, questions_left);
+                break;
+            }
+
+            
+            
             int answer = -1;
             if (key2) answer = 0;        // KEY2 = YES
             else if (key0) answer = 1;   // KEY0 = NO
